@@ -36,7 +36,7 @@ def events(request):
             event.event_type = item.get('event_type', '')
             event.event_name = item.get('event_name', '')
             event.source_url = item.get('source_url', '')
-            
+            event.app_name = item.get('app_name','')
             #save the event object to the database
             event.save()
 

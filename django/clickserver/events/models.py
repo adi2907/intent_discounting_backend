@@ -16,6 +16,7 @@ class Event(models.Model):
     event_type = models.TextField()
     event_name = models.TextField()
     source_url = models.TextField()
+    app_name = models.TextField()
     class Meta:
         db_table = 'event_raw'
 

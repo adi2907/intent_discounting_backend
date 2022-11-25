@@ -25,8 +25,9 @@ SECRET_KEY = 'django-insecure-r$m_w185is44+at6kx-ivh9ll!+9uy2_j9bdff%^bq*z_8hlhq
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS =['3.110.173.23']
+ALLOWED_HOSTS =['3.6.225.178','almeapp.com']
 CORS_ORIGIN_ALLOW_ALL = True
+SECURE_SSL_REDIRECT = True
 
 # Application definition
 
