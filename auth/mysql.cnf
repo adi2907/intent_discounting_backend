@@ -1,5 +1,5 @@
 [client]
 database ='events'
 user = 'username'
-password = ''
+password = 'circuit@123'
 default-character-set = 'utf8'
