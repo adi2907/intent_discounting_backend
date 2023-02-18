@@ -4,8 +4,9 @@ from events.models import Event
 import numpy as np
 from django.db.models import Q
 from datetime import timedelta
-import logging
 from celery import shared_task
+#from .apilogger import logger
+import logging
 logger = logging.getLogger(__name__)
 
 @shared_task
@@ -28,8 +29,7 @@ def update_products(new_product_ids,events):
 def update_user(tokens,events,app_name):
     for user_token in tokens:
         user_events = events.filter(token=user_token)
-        logger.info('Number of user events: %s', len(user_events))   
-        
+               
         # if token exists in database
         if User.objects.filter(token=user_token).exists():
             user = User.objects.get(token=user_token)            
@@ -54,13 +54,12 @@ def update_user(tokens,events,app_name):
 def update_user_activities(tokens,events,app_name):
     for user_token in tokens:
         user_events = events.filter(token=user_token)
-        logger.info('Number of user events: %s', len(user_events))   
         # get all product ids for the user, excluding blank and null
         product_ids = user_events.values_list('product_id', flat=True).distinct()
         product_ids = product_ids.exclude(product_id__isnull=True).exclude(product_id='').exclude(product_id=0)
         
         if len(product_ids) == 0:
-            continue
+            return
         user = User.objects.get(token=user_token)
         # iterate through each product id
         for product_id in product_ids:
@@ -105,7 +104,6 @@ def update_user_activities(tokens,events,app_name):
 def update_database_chunk(events,app_name):
     # extract all the tokens or customers
     tokens = events.values_list('token', flat=True).distinct()
-    logger.info('Number of tokens: %s', len(tokens)) 
 
     # 1. Update items database
     product_ids = events.values_list('product_id', flat=True).distinct()
@@ -113,6 +111,7 @@ def update_database_chunk(events,app_name):
 
     #if there are no new product ids, skip to next app
     if len(product_ids) == 0:
+       logger.info("No products to insert")
        return
 
     # check if product_id exists in database using numpy
@@ -131,9 +130,8 @@ def update_database_chunk(events,app_name):
     # 3. update visits & carts and identified users database   
     update_user_activities(tokens,events,app_name)
 
-
+@shared_task
 def update_database():
-    logger = logging.getLogger(__name__)
 
     # for each app name
     # TODO: add app_name model and iterate from there
