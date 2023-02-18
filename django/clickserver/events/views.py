@@ -29,6 +29,7 @@ def events(request):
             event.user_id = item.get('user_id', '')
             # convert epoch time to datetime in 'yyyy-mm-dd hh:mm:ss' format
             event.click_time = datetime.datetime.fromtimestamp(item.get('click_time', 0)).strftime('%Y-%m-%d %H:%M:%S')
+            event.click_time = datetime.datetime.strptime(event.click_time, '%Y-%m-%d %H:%M:%S') + datetime.timedelta(hours=5, minutes=30)
             event.user_regd = item.get('user_regd','')
             event.user_agent = item.get('user_agent', '')
             event.browser = item.get('browser', '')
@@ -37,6 +38,12 @@ def events(request):
             event.event_name = item.get('event_name', '')
             event.source_url = item.get('source_url', '')
             event.app_name = item.get('app_name','')
+            event.click_text = item.get('click_text','')
+            event.product_name = item.get('product_name', '')
+            event.product_id = item.get('product_id', '')
+            event.product_price = item.get('product_price', '')
+            event.product_category = item.get('product_category', '')
+            event.product_created_date = item.get('product_created_date', '')
             #save the event object to the database
             event.save()
 

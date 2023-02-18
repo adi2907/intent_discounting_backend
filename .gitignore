@@ -4,3 +4,6 @@
 *.pyc
 *.pyo
 venv/
+*.zip
+mysql2sqlite-master/
+*.cnf

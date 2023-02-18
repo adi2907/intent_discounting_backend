@@ -17,9 +17,14 @@ class Event(models.Model):
     event_name = models.TextField()
     source_url = models.TextField()
     app_name = models.TextField()
+    click_text = models.TextField(default='')
+    # add product properties
+    product_id = models.TextField(null=True)
+    product_name = models.TextField(null=True)
+    product_price = models.TextField(null=True)
+    # array of categories
+    product_category = models.TextField(null=True)
+    product_created_date = models.TextField(null=True)
+
     class Meta:
         db_table = 'event_raw'
-
-    
-
-
