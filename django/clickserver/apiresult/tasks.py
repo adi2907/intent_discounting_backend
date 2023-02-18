@@ -8,27 +8,8 @@ import logging
 from celery import shared_task
 logger = logging.getLogger(__name__)
 
-# update database chunk
-def update_database_chunk(events,app_name):
-    # extract all the tokens or customers
-    tokens = events.values_list('token', flat=True).distinct()
-    logger.info('Number of tokens: %s', len(tokens)) 
-
-    # 1. extract all new item ids and add to Item database
-    product_ids = events.values_list('product_id', flat=True).distinct()
-    product_ids = product_ids.exclude(product_id__isnull=True).exclude(product_id='').exclude(product_id=0)
-
-    # if there are no new product ids, skip to next app
-    #if len(product_ids) == 0:
-    #    return
-
-    # check if product_id exists in database using numpy
-    # extract all product ids from database
-    db_product_ids = Item.objects.values_list('item_id', flat=True)
-
-    # find the difference between the two arrays
-    new_product_ids = np.setdiff1d(product_ids, db_product_ids)
-    # add new product ids to database
+@shared_task
+def update_products(new_product_ids,events):
     for product_id in new_product_ids:
         item = Item(item_id=product_id)
         # get the last event for the product
@@ -43,93 +24,114 @@ def update_database_chunk(events,app_name):
         item.last_updated = event.click_time
         item.save()
 
-    # 2. update user database, visits and add to carts
-    # iterate through each token
-    for token in tokens:
-        user_events = events.filter(token=token)
+@shared_task
+def update_user(tokens,events,app_name):
+    for user_token in tokens:
+        user_events = events.filter(token=user_token)
+        logger.info('Number of user events: %s', len(user_events))   
+        
+        # if token exists in database
+        if User.objects.filter(token=user_token).exists():
+            user = User.objects.get(token=user_token)            
+            # update user
+            user.last_visit = user_events.order_by('-click_time')[0].click_time
+            # TODO: update user sessions as number of unique sessions 
+            #user.num_sessions += user_events.values_list('session', flat=True).distinct().count()
+            user.last_updated = user_events.order_by('-click_time')[0].click_time
+            user.save()
+        else:
+            # add user to database
+            user = User(token=user_token, app_name=app_name,num_sessions=0)
+            user.first_visit = user_events.order_by('click_time')[0].click_time
+            user.last_visit = user_events.order_by('-click_time')[0].click_time
+            # TODO: update user sessions as number of unique sessions 
+            #user.num_sessions = user_events.values_list('session', flat=True).distinct().count()
+            user.last_updated = user_events.order_by('-click_time')[0].click_time
+            user.save()
+          
+
+@shared_task
+def update_user_activities(tokens,events,app_name):
+    for user_token in tokens:
+        user_events = events.filter(token=user_token)
         logger.info('Number of user events: %s', len(user_events))   
         # get all product ids for the user, excluding blank and null
         product_ids = user_events.values_list('product_id', flat=True).distinct()
         product_ids = product_ids.exclude(product_id__isnull=True).exclude(product_id='').exclude(product_id=0)
-
-        # if token exists in database
-        if User.objects.filter(token=token).exists():
-            user = User.objects.get(token=token)            
-            # update user
-            user.last_visit = user_events.order_by('-click_time')[0].click_time
-            # update user sessions as number of unique sessions 
-            user.num_sessions += user_events.values_list('session', flat=True).distinct().count()
-            user.last_updated = user_events.order_by('-click_time')[0].click_time
-            # update user product and cart visits     
-            # iterate through each product id
-            for product_id in product_ids:
-                # get all the page load events for the product
-                visit_events = user_events.filter(product_id=product_id).filter(event_type='page_load')
-                # Update each visit
-                for event in visit_events:
-                    visit = Visits(user=user, item=Item.objects.get(item_id=product_id), app_name=app_name, created_at=event.click_time)
-                    visit.save()
-                
-                # update user product cart, where the event has 'add to' in the click_text
-                # TODO: This needs to be mapped as per the app_name, for now will suffice
-                cart_events = user_events.filter(product_id=product_id).filter(click_text__contains='add to')
-                # Update each cart
-                for event in cart_events:
-                    cart = Cart(user=user, item=Item.objects.get(item_id=product_id), app_name=app_name, created_at=event.click_time)
-                    cart.save()
-        # if token does not exist in database
-        else:
-            # create a new user
-            user = User(token=token, app_name=app_name,num_sessions=0)
-            # if user_id exists then update user_id
-            
-            userid_events = user_events.filter(~Q(user_id__isnull=True)&~Q(user_id='')&~Q(user_id=0))
-            if userid_events.exists():
-                user.user_id = userid_events[0].user_id
-                user.user_login = userid_events[0].user_login
-                # add to identified user database
-                
-                if IdentifiedUser.objects.filter(user_id=user.user_id).filter(app_name=app_name).exists():
-                    # add this token to the identified user by user_id and app_name
-                    identified_user = IdentifiedUser.objects.get(user_id=user.user_id, app_name=app_name)
-                    # if token does not exist in list of tokens of identifed user
-                    
-                    if token not in identified_user.tokens:
-                        identified_user.tokens.append(token)
-                        identified_user.save()
-                else:
-                    # create a new identified user
-                    identified_user = IdentifiedUser(user_id=user.user_id, app_name=app_name,tokens=[])
-                    identified_user.tokens.append(token)
-                    identified_user.save()
-
         
-            # update user
-            user.first_visit = user_events.order_by('click_time')[0].click_time
-            user.last_updated = user_events.order_by('-click_time')[0].click_time
-            user.last_visit = user_events.order_by('-click_time')[0].click_time
-            user.num_sessions += user_events.values_list('session', flat=True).distinct().count()      
-            user.save()
+        if len(product_ids) == 0:
+            continue
+        user = User.objects.get(token=user_token)
+        # iterate through each product id
+        for product_id in product_ids:
+            # get all the page load events for the product
+            visit_events = user_events.filter(product_id=product_id).filter(event_type='page_load')
+            
+            # Update each visit
+            for event in visit_events:
+                visit = Visits(user=user, item=Item.objects.get(item_id=product_id), app_name=app_name, created_at=event.click_time)
+                visit.save()
 
-            # iterate through each product id
-            for product_id in product_ids:
-                # get all the page load events for the product
-                visit_events = user_events.filter(product_id=product_id).filter(event_type='page_load')
-                print(len(visit_events))
-                # Update each visit
-                for event in visit_events:
-                    visit = Visits(user=user, item=Item.objects.get(item_id=product_id), app_name=app_name, created_at=event.click_time)
-                    visit.save()
+            cart_events = user_events.filter(product_id=product_id).filter(click_text__contains='add to')
+            # Update each cart
+            for event in cart_events:
+                cart = Cart(user=user, item=Item.objects.get(item_id=product_id), app_name=app_name, created_at=event.click_time)
+                cart.save()
+        
+        userid_events = user_events.filter(~Q(user_id__isnull=True)&~Q(user_id='')&~Q(user_id=0))
+        if userid_events.exists():
+            user.user_id = userid_events[0].user_id
+            user.user_login = userid_events[0].user_login
+            # add to identified user database
+            
+            if IdentifiedUser.objects.filter(user_id=user.user_id).filter(app_name=app_name).exists():
+                # add this token to the identified user by user_id and app_name
+                identified_user = IdentifiedUser.objects.get(user_id=user.user_id, app_name=app_name)
+                # if token does not exist in list of tokens of identifed user
                 
-                cart_events = user_events.filter(product_id=product_id).filter(click_text__contains='add to')
-                    # update user product cart, where the event has 'add to' in the click_text
-                # TODO: This needs to be mapped as per the app_name
-                for event in cart_events:
-                    cart = Cart(user=user, item=Item.objects.get(item_id=product_id), app_name=app_name, created_at=event.click_time)
-                    cart.save()
+                if user_token not in identified_user.tokens:
+                    identified_user.tokens.append(user_token)
+                    identified_user.save()
+            else:
+                # create a new identified user
+                identified_user = IdentifiedUser(user_id=user.user_id, app_name=app_name,tokens=[])
+                identified_user.tokens.append(user_token)
+                identified_user.save()
+
 
 
 @shared_task
+# update database chunk
+def update_database_chunk(events,app_name):
+    # extract all the tokens or customers
+    tokens = events.values_list('token', flat=True).distinct()
+    logger.info('Number of tokens: %s', len(tokens)) 
+
+    # 1. Update items database
+    product_ids = events.values_list('product_id', flat=True).distinct()
+    product_ids = product_ids.exclude(product_id__isnull=True).exclude(product_id='').exclude(product_id=0)
+
+    #if there are no new product ids, skip to next app
+    if len(product_ids) == 0:
+       return
+
+    # check if product_id exists in database using numpy
+    # extract all product ids from database
+    db_product_ids = Item.objects.values_list('item_id', flat=True)
+
+    # find the difference between the two arrays
+    new_product_ids = np.setdiff1d(product_ids, db_product_ids)
+    # if there are any new product ids, add to database
+    if len(new_product_ids) > 0:
+        update_products(new_product_ids,events)
+
+    # 2. update user database
+    update_user(tokens,events,app_name)
+
+    # 3. update visits & carts and identified users database   
+    update_user_activities(tokens,events,app_name)
+
+
 def update_database():
     logger = logging.getLogger(__name__)
 
