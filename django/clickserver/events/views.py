@@ -48,6 +48,8 @@ def events(request):
             event.product_category = item.get('product_category', '')
             event.product_created_date = item.get('product_created_date', '')
             event.logged_time = datetime.datetime.now()
+            # convert the time to local time
+            event.logged_time = event.logged_time + datetime.timedelta(hours=5, minutes=30)
             #save the event object to the database
             event.save()
 
