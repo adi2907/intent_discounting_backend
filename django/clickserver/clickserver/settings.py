@@ -167,7 +167,7 @@ CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
 # CELERY_BEAT_SCHEDULE = {
 #     'update-every-minute': {
 #         'task': 'apiresult.tasks.update_database',
-#         'schedule': 60.0,
+#         'schedule': 300.0, # 5 minutes
 #     },
 # }
 
