@@ -4,6 +4,7 @@ from django.http import HttpResponse
 from django.shortcuts import render
 from .models import Event
 from django.views.decorators.csrf import csrf_exempt
+from django.utils import timezone
 import json
 
 @csrf_exempt
@@ -27,8 +28,10 @@ def events(request):
             event.session = item.get('session', '')
             event.user_login = item.get('user_login', '')
             event.user_id = item.get('user_id', '')
+
             # convert epoch time to datetime in 'yyyy-mm-dd hh:mm:ss' format
             event.click_time = datetime.datetime.fromtimestamp(item.get('click_time', 0)).strftime('%Y-%m-%d %H:%M:%S')
+            # convert the time to local time    
             event.click_time = datetime.datetime.strptime(event.click_time, '%Y-%m-%d %H:%M:%S') + datetime.timedelta(hours=5, minutes=30)
             event.user_regd = item.get('user_regd','')
             event.user_agent = item.get('user_agent', '')
@@ -44,6 +47,7 @@ def events(request):
             event.product_price = item.get('product_price', '')
             event.product_category = item.get('product_category', '')
             event.product_created_date = item.get('product_created_date', '')
+            event.logged_time = datetime.datetime.now()
             #save the event object to the database
             event.save()
 

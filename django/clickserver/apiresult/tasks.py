@@ -1,158 +1,217 @@
 
+from datetime import datetime
 from .models import Item,User, Visits, Cart,IdentifiedUser
 from events.models import Event
 import numpy as np
-from django.db.models import Q
+from django.db import connections
 from datetime import timedelta
-from celery import shared_task
+from celery import shared_task,group,chain
+from django.core import serializers
+from django.http import JsonResponse
+import json
 #from .apilogger import logger
 import logging
 logger = logging.getLogger(__name__)
+from concurrent.futures import ThreadPoolExecutor
+import concurrent.futures
+import redis
+from django.conf import settings
+
+
 
 @shared_task
-def update_products(new_product_ids,events):
-    for product_id in new_product_ids:
-        item = Item(item_id=product_id)
-        # get the last event for the product
-        event = events.filter(product_id=product_id).order_by('-click_time')[0]
-        item.name = event.product_name
-        price = event.product_price
-        if price == '':
-            price = 0
-        item.price = price
-        item.categories = event.product_category
-        item.app_name = item.app_name
-        item.last_updated = event.click_time
-        item.save()
+def update_products(new_product_ids, event_ids, app_name,start_time):
+    logger.info("update_products start time "+str(start_time))
+    # Get events from the database from event_ids
+    events = Event.objects.filter(id__in=event_ids)
+
+    # Create a list of dictionaries containing necessary information for each event
+    event_data = events.values('id', 'product_id', 'click_time', 'product_name', 'product_price', 'product_category')
+
+    with ThreadPoolExecutor() as executor:
+        product_tasks = [
+            executor.submit(update_individual_product, product_id, event_data, app_name)
+            for product_id in new_product_ids
+        ]
+        for future in concurrent.futures.as_completed(product_tasks):
+            future.result()
+       
 
 @shared_task
-def update_user(tokens,events,app_name):
-    for user_token in tokens:
-        user_events = events.filter(token=user_token)
-               
-        # if token exists in database
-        if User.objects.filter(token=user_token).exists():
-            user = User.objects.get(token=user_token)            
-            # update user
-            user.last_visit = user_events.order_by('-click_time')[0].click_time
-            # TODO: update user sessions as number of unique sessions 
-            #user.num_sessions += user_events.values_list('session', flat=True).distinct().count()
-            user.last_updated = user_events.order_by('-click_time')[0].click_time
-            user.save()
-        else:
-            # add user to database
-            user = User(token=user_token, app_name=app_name,num_sessions=0)
-            user.first_visit = user_events.order_by('click_time')[0].click_time
-            user.last_visit = user_events.order_by('-click_time')[0].click_time
-            # TODO: update user sessions as number of unique sessions 
-            #user.num_sessions = user_events.values_list('session', flat=True).distinct().count()
-            user.last_updated = user_events.order_by('-click_time')[0].click_time
-            user.save()
-          
+def update_individual_product(product_id, event_data, app_name):
+   
+    # Check if an item with the given product_id already exists
+    item, created = Item.objects.get_or_create(item_id=product_id, app_name=app_name)
+
+    # Filter the event_data list for events with the specific product_id and get the last event
+    product_events = [event for event in event_data if event['product_id'] == product_id]
+    product_events.sort(key=lambda x: x['click_time'], reverse=True)
+    event = product_events[0]
+
+    item.name = event['product_name']
+    price = event['product_price']
+    if price == '':
+        price = 0
+    item.price = price
+    item.categories = event['product_category']
+    item.app_name = app_name
+    item.last_updated = event['click_time']
+    item.save()
+    connections.close_all()
+
 
 @shared_task
-def update_user_activities(tokens,events,app_name):
-    for user_token in tokens:
-        user_events = events.filter(token=user_token)
-        # get all product ids for the user, excluding blank and null
-        product_ids = user_events.values_list('product_id', flat=True).distinct()
-        product_ids = product_ids.exclude(product_id__isnull=True).exclude(product_id='').exclude(product_id=0)
-        
-        if len(product_ids) == 0:
-            return
+def update_users(tokens, event_ids, app_name,start_time):
+    # log the start time and end time
+    logger.info("update_users start time: " + str(start_time))
+    events = Event.objects.filter(id__in=event_ids)
+    event_data = events.values('id', 'token', 'click_time', 'session', 'user_id', 'user_login')
+    with ThreadPoolExecutor() as executor:
+        user_tasks = [executor.submit(update_individual_user, user_token, event_data, app_name) for user_token in tokens]
+        for future in concurrent.futures.as_completed(user_tasks):
+            future.result()
+
+@shared_task
+def update_individual_user(user_token, event_data, app_name):
+    # user_events is now a list of dictionaries containing event attributes
+    user_events = [event for event in event_data if event['token'] == user_token]
+    if not user_events:
+        return
+
+    first_event = min(user_events, key=lambda e: e['click_time'])
+    last_event = max(user_events, key=lambda e: e['click_time'])
+
+    user, created = User.objects.get_or_create(token=user_token, defaults={
+            'app_name': app_name,
+            'num_sessions': 0,
+            'first_visit': first_event['click_time'],
+            'last_visit': last_event['click_time'],
+            'last_updated': last_event['click_time']
+        })
+
+    if not created:
+        user.last_visit = last_event['click_time']
+        user.last_updated = last_event['click_time']
+    user.save()
+    connections.close_all()
+
+@shared_task
+def update_user_activities(tokens, event_ids, app_name,start_time):
+    logger.info("update_user_activities start time: " + str(start_time))
+    # Fetch all events related to the event_ids
+    events = Event.objects.filter(id__in=event_ids)
+    events_data = events.values('id', 'token', 'click_time', 'session', 'user_id', 'user_login', 'product_id', 'event_type', 'click_text')
+
+    with ThreadPoolExecutor() as executor:
+        user_activities_tasks = [executor.submit(update_individual_user_activities, user_token, events_data, app_name) for user_token in tokens]
+        for future in concurrent.futures.as_completed(user_activities_tasks):
+            future.result()
+
+@shared_task
+def update_individual_user_activities(user_token, events_data, app_name):
+    try:
         user = User.objects.get(token=user_token)
-        # iterate through each product id
+    except:
+        logger.info("Exception getting user: " + user_token)
+        return
+
+    # Filter the events_data based on the user_token
+    user_events = [event for event in events_data if event['token'] == user_token]
+
+    # Get all product ids for the user, excluding blank and null
+    product_ids = list(set([event['product_id'] for event in user_events if event['product_id'] not in [None, '', 0]]))
+
+    # Update visit and cart events
+    if product_ids:
         for product_id in product_ids:
-            # get all the page load events for the product
-            visit_events = user_events.filter(product_id=product_id).filter(event_type='page_load')
-            
+            visit_events = [event for event in user_events if event['product_id'] == product_id and event['event_type'] == 'page_load']
+            item = Item.objects.filter(item_id=product_id).last()
+
             # Update each visit
             for event in visit_events:
-                visit = Visits(user=user, item=Item.objects.get(item_id=product_id), app_name=app_name, created_at=event.click_time)
+                visit = Visits(user=user, item=item, app_name=app_name, created_at=event['click_time'])
                 visit.save()
 
-            cart_events = user_events.filter(product_id=product_id).filter(click_text__contains='add to')
+            cart_events = [event for event in user_events if event['product_id'] == product_id and event['click_text'] is not None and 'add to' in event['click_text'].lower()]
+
             # Update each cart
             for event in cart_events:
-                cart = Cart(user=user, item=Item.objects.get(item_id=product_id), app_name=app_name, created_at=event.click_time)
+                cart = Cart(user=user, item=item, app_name=app_name, created_at=event['click_time'])
                 cart.save()
-        
-        userid_events = user_events.filter(~Q(user_id__isnull=True)&~Q(user_id='')&~Q(user_id=0))
-        if userid_events.exists():
-            user.user_id = userid_events[0].user_id
-            user.user_login = userid_events[0].user_login
-            # add to identified user database
-            
-            if IdentifiedUser.objects.filter(user_id=user.user_id).filter(app_name=app_name).exists():
-                # add this token to the identified user by user_id and app_name
-                identified_user = IdentifiedUser.objects.get(user_id=user.user_id, app_name=app_name)
-                # if token does not exist in list of tokens of identifed user
-                
-                if user_token not in identified_user.tokens:
-                    identified_user.tokens.append(user_token)
-                    identified_user.save()
-            else:
-                # create a new identified user
-                identified_user = IdentifiedUser(user_id=user.user_id, app_name=app_name,tokens=[])
+
+    # Update identified user
+    userid_events = [event for event in user_events if event['user_id'] not in [None, '', 0]]
+
+    if userid_events:
+        user.user_id = userid_events[0]['user_id']
+        user.user_login = userid_events[0]['user_login']
+        user.save()
+
+        if IdentifiedUser.objects.filter(user_id=user.user_id).filter(app_name=app_name).exists():
+            identified_user = IdentifiedUser.objects.get(user_id=user.user_id, app_name=app_name)
+
+            if user_token not in identified_user.tokens:
                 identified_user.tokens.append(user_token)
                 identified_user.save()
+        else:
+            identified_user = IdentifiedUser(user_id=user.user_id, app_name=app_name, tokens=[user_token])
+            identified_user.save()
+    connections.close_all()
 
-
-
-@shared_task
-# update database chunk
-def update_database_chunk(events,app_name):
-    # extract all the tokens or customers
-    tokens = events.values_list('token', flat=True).distinct()
-
-    # 1. Update items database
-    product_ids = events.values_list('product_id', flat=True).distinct()
-    product_ids = product_ids.exclude(product_id__isnull=True).exclude(product_id='').exclude(product_id=0)
-
-    #if there are no new product ids, skip to next app
-    if len(product_ids) == 0:
-       logger.info("No products to insert")
-       return
-
-    # check if product_id exists in database using numpy
-    # extract all product ids from database
-    db_product_ids = Item.objects.values_list('item_id', flat=True)
-
-    # find the difference between the two arrays
-    new_product_ids = np.setdiff1d(product_ids, db_product_ids)
-    # if there are any new product ids, add to database
-    if len(new_product_ids) > 0:
-        update_products(new_product_ids,events)
-
-    # 2. update user database
-    update_user(tokens,events,app_name)
-
-    # 3. update visits & carts and identified users database   
-    update_user_activities(tokens,events,app_name)
 
 @shared_task
 def update_database():
-
+          
     # for each app name
     # TODO: add app_name model and iterate from there
     for app_name in Event.objects.values_list('app_name', flat=True).distinct():
-        # log the app_name
-        logger.info("Updating database for app_name: %s", app_name)
-        # start time of events to be added to database
-        if User.objects.filter(app_name=app_name).count() == 0:
-            start_time = Event.objects.filter(app_name=app_name).order_by('click_time')[0].click_time
-        else:
-            start_time = User.objects.filter(app_name=app_name).order_by('-last_updated')[0].last_updated
-        # end time of events
-        end_time = Event.objects.filter(app_name=app_name).order_by('-click_time')[0].click_time
+        
+        # # if app_name is not equal to 'x' or 'y' continue
+        # if app_name != 'desi_sandook':
+        #     continue
 
+        start_time = datetime(2023, 1, 5, 0, 0, 0)
+        end_time = datetime(2023, 1, 5, 1, 0, 0)
+        
+        # chunk size for events
+        time_chunk = 30
         # get all events in chunks of 5 minutes
         while start_time < end_time:
             # get events between start and end time
-            events = Event.objects.filter(click_time__gte=start_time).filter(click_time__lt=start_time+timedelta(minutes=5)).filter(app_name=app_name)
-            # log the number of events
-            logger.info("Number of events for app_name: %s, start_time: %s, end_time: %s, number of events: %s", app_name, start_time, start_time+timedelta(minutes=5), len(events))
+            events = Event.objects.filter(click_time__gte=start_time).filter(click_time__lt=start_time+timedelta(minutes=time_chunk)).filter(app_name=app_name)
+            # get the database ids corresponding to the events as a list
+            event_ids = events.values_list('id', flat=True).distinct()
+            event_ids = list(event_ids)
+
+            logger.info("Number of events for app_name: %s, start_time: %s, end_time: %s, number of events: %s", app_name, start_time, start_time+timedelta(minutes=time_chunk), len(events))
+
+            #1. List customer tokens in this event chunk 
+            tokens = events.values_list('token', flat=True).distinct()
+            tokens = list(tokens)
+            
+            # 2. List product ids in this event chunk
+            product_ids = events.values_list('product_id', flat=True).distinct()
+            product_ids = product_ids.exclude(product_id__isnull=True).exclude(product_id='').exclude(product_id=0)
+            # extract all product ids from database with the same app_name
+            db_product_ids = Item.objects.filter(app_name=app_name).values_list('item_id', flat=True).distinct()
+            
+            new_product_ids = np.setdiff1d(product_ids, db_product_ids).tolist()
+            
+
             # update database
-            update_database_chunk(events, app_name)
+            if len(new_product_ids) > 0:
+                # update products and users in parallel using celery
+                
+                g1 = group(update_products.si(new_product_ids,event_ids,app_name,start_time),update_users.si(tokens,event_ids,app_name,start_time))
+                # chain update_user_activities to g1
+                g2 = chain(g1,update_user_activities.si(tokens,event_ids,app_name,start_time))
+            
+            else:
+                # chain user and user_activities
+                g2 = chain(update_users.si(tokens,event_ids,app_name,start_time),update_user_activities.si(tokens,event_ids,app_name,start_time))
+            
+            g2()          
+    
             # update start time
-            start_time = start_time+timedelta(minutes=5)
+            start_time = start_time+timedelta(minutes=time_chunk)
+           

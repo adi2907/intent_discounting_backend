@@ -7,17 +7,24 @@ from .models import *
 from django.utils import timezone
 from django.db.models import Count
 
-# return cart items for user
+
+''' returns carts for user
+Usage: curl "http://127.0.0.1:8000/api/carts/?token=q6wxm4v47y9"
+curl "http://127.0.0.1:8000/api/carts/?token=q6wxm4v47y9&last_7_days=True"
+curl "http://127.0.0.1:8000/api/carts/?token=q6wxm4v47y9&last_7_days&max_items=5"
+curl  "http://127.0.0.1:8000/api/carts/?token=q6wxm4v47y9&start_date=2023-01-01&end_date=2023-01-02?max_items=5"
+Response: ["114338","130233","130438","114799","128072"]
+'''
 class CartView(APIView):
     
-   # return cart items for user
+    # return cart items for user
     def get(self, request):
         token = self.request.query_params.get('token', None)
         start_date = self.request.query_params.get('start_date', None)
         end_date = self.request.query_params.get('end_date', None)
         last_7_days = self.request.query_params.get('last_7_days', None)
         last_30_days = self.request.query_params.get('last_30_days', None)
-        max_items = self.request.query_params.get('max_items', None)
+        max_items = self.request.query_params.get('max_items', 10)
 
         if last_7_days is not None:
             queryset = Cart.objects.filter(user__token=token, created_at__gte=timezone.now() - timezone.timedelta(days=7))
@@ -27,16 +34,19 @@ class CartView(APIView):
             queryset = Cart.objects.filter(user__token=token, created_at__range=(start_date, end_date))
         else:
             queryset = Cart.objects.filter(user__token=token)
-        if max_items is not None:
-            queryset = queryset[:int(max_items)]       
-        queryset = queryset.values('item_id')     
-        product_ids = []
-        for item in queryset:
-            product_ids.append(Item.objects.get(id=item['item_id']).item_id)
+        
+        queryset = queryset.values('item_id').annotate(count=Count('item_id')).order_by('-count')[:int(max_items)]
+        queryset = queryset[:int(max_items)]  
+        product_ids = [Item.objects.get(id=item['item_id']).item_id for item in queryset]      
         return Response(product_ids)
 
-
-# return visit items for user
+''' returns visits for user in descending order of number of visits
+Usage: curl "http://127.0.0.1:8000/api/visits/?token=q6wxm4v47y9"
+curl "http://127.0.0.1:8000/api/visits/?token=q6wxm4v47y9&last_7_days=True"
+curl "http://127.0.0.1:8000/api/visits/?token=q6wxm4v47y9&last_7_days&max_items=5"
+curl  "http://127.0.0.1:8000/api/visits/?token=q6wxm4v47y9&start_date=2023-01-01&end_date=2023-01-02?max_items=5"
+Response: ["130233","128072","130438","107096","114799"]
+'''
 class VisitsView(APIView):
     def get(self, request):
         token = self.request.query_params.get('token', None)
@@ -44,7 +54,7 @@ class VisitsView(APIView):
         end_date = self.request.query_params.get('end_date', None)
         last_7_days = self.request.query_params.get('last_7_days', None)
         last_30_days = self.request.query_params.get('last_30_days', None)
-        max_items = self.request.query_params.get('max_items', None)
+        max_items = self.request.query_params.get('max_items', 10)
 
         if last_7_days is not None:
             queryset = Visits.objects.filter(user__token=token, created_at__gte=timezone.now() - timezone.timedelta(days=7))
@@ -54,14 +64,20 @@ class VisitsView(APIView):
             queryset = Visits.objects.filter(user__token=token, created_at__range=(start_date, end_date))
         else:
             queryset = Visits.objects.filter(user__token=token)
-        if max_items is not None:
-            queryset = queryset[:int(max_items)]       
-        queryset = queryset.values('item_id')     
-        product_ids = []
-        for item in queryset:
-            product_ids.append(Item.objects.get(id=item['item_id']).item_id)
-        return Response(product_ids)
+        
+        # Annotate visit count and order by descending count
+        queryset = queryset.values('item_id').annotate(visit_count=Count('item_id')).order_by('-visit_count')
+        queryset = queryset[:int(max_items)]       
 
+        product_ids = [Item.objects.get(id=item['item_id']).item_id for item in queryset]      
+        return Response(product_ids)
+ 
+
+'''
+Returns most visited items
+Usage: curl "http://127.0.0.1:8000/api/most_visited/?max_items=5"
+Response: ["127109","130239","126319","130438","129470"]
+'''
 
 class MostVisitedView(APIView):
     def get(self,request):
@@ -69,7 +85,10 @@ class MostVisitedView(APIView):
         end_date = self.request.query_params.get('end_date', None)
         last_7_days = self.request.query_params.get('last_7_days', None)
         last_30_days = self.request.query_params.get('last_30_days', None)
-        max_items = self.request.query_params.get('max_items', None)
+        # set max_items to 10 if not specified
+        max_items = self.request.query_params.get('max_items', 10)
+       
+
 
         if last_7_days is not None:
             queryset = Visits.objects.filter(created_at__gte=timezone.now() - timezone.timedelta(days=7))
@@ -81,24 +100,25 @@ class MostVisitedView(APIView):
             queryset = Visits.objects.all()
             
         queryset = queryset.values('item_id').annotate(count=Count('item_id')).order_by('-count')
-        if max_items is not None:
-            queryset = queryset[:int(max_items)]       
+        queryset = queryset[:int(max_items)].values('item_id')    
         
-        queryset = queryset.values('item_id')
        
         product_ids = []
         for item in queryset:
             product_ids.append(Item.objects.get(id=item['item_id']).item_id)
         return Response(product_ids)
-    
-
+'''   
+Returns most carted items
+Usage: curl "http://127.0.0.1:8000/api/most_carted/?max_items=5"
+Response: ["130188","130415","128734","128153","124324"]
+'''
 class MostCartedView(APIView):
     def get(self,request):
         start_date = self.request.query_params.get('start_date', None)
         end_date = self.request.query_params.get('end_date', None)
         last_7_days = self.request.query_params.get('last_7_days', None)
         last_30_days = self.request.query_params.get('last_30_days', None)
-        max_items = self.request.query_params.get('max_items', None)
+        max_items = self.request.query_params.get('max_items', 10)
 
         if last_7_days is not None:
             queryset = Cart.objects.filter(created_at__gte=timezone.now() - timezone.timedelta(days=7))
@@ -110,9 +130,7 @@ class MostCartedView(APIView):
             queryset = Cart.objects.all()
             
         queryset = queryset.values('item_id').annotate(count=Count('item_id')).order_by('-count')
-        if max_items is not None:
-            queryset = queryset[:int(max_items)]       
-        queryset = queryset.values('item_id')
+        queryset = queryset[:int(max_items)].values('item_id')    
         product_ids = []
         for item in queryset:
             product_ids.append(Item.objects.get(id=item['item_id']).item_id)

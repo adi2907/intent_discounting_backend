@@ -25,7 +25,9 @@ SECRET_KEY = 'django-insecure-r$m_w185is44+at6kx-ivh9ll!+9uy2_j9bdff%^bq*z_8hlhq
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS =['3.6.225.178','almeapp.com']
+ALLOWED_HOSTS = ['*']
+
+#ALLOWED_HOSTS =['3.6.225.178','almeapp.com','127.0.0.1','localhost']
 CORS_ORIGIN_ALLOW_ALL = True
 SECURE_SSL_REDIRECT = True
 
@@ -48,7 +50,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
-    'django.middleware.security.SecurityMiddleware',
+    #'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -89,10 +91,30 @@ WSGI_APPLICATION = 'clickserver.wsgi.application'
 #}
 
 DATABASES = {
-        'default':{
+        'default': {
             'ENGINE':'django.db.backends.mysql',
-            'OPTIONS':{
-                'read_default_file':'/home/ubuntu/clickstream/auth/mysql.cnf' },
+            'NAME':'events',
+            'USER':'root',
+            'PASSWORD':'nexarc@123',
+            #ip address of the database
+            'HOST':'localhost',
+            'PORT':'3306',
+            
+
+        # 'ENGINE': 'django.db.backends.sqlite3',
+        # 'NAME': 'mysqlite3_mod.db',
+        # },
+        
+            # 'ENGINE':'django.db.backends.mysql',
+            # 'NAME':'events',
+            # 'USER':'user',
+            # 'PASSWORD':'Circuit@123',
+            # #ip address of the database
+            # 'HOST':'ec2-3-6-225-178.ap-south-1.compute.amazonaws.com',
+            # #'HOST':'localhost',
+            # 'PORT':'3306',
+            # # 'OPTIONS':{
+            # #     'read_default_file':'sqlconn.cnf' },
             },
         }
         
@@ -122,11 +144,11 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Kolkata'
 
 USE_I18N = True
 
-USE_TZ = False
+USE_TZ = True
 
 
 # Static files (CSS, JavaScript, Images)
@@ -139,6 +161,17 @@ MEDIA_ROOT = '/home/ubuntu/clickstream/site/public/media'
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
 
-CELERY_BROKER_URL = 'redis://localhost:6379/0'
+#CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_BROKER_URL = 'amqp://guest:guest@localhost:5672//'
 CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+# CELERY_BEAT_SCHEDULE = {
+#     'update-every-minute': {
+#         'task': 'apiresult.tasks.update_database',
+#         'schedule': 60.0,
+#     },
+# }
+
+TEST_RUNNER = 'apiresult.test_runner.NoDbTestRunner'
+
+
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

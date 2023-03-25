@@ -7,3 +7,9 @@ venv/
 *.zip
 mysql2sqlite-master/
 *.cnf
+*.sql
+**/migrations/**
+*.db
+*.sqlite3
+*.rdb
+celerybeat-schedule

@@ -5,7 +5,7 @@ from events import views
 
 # define url to handle post requests from the xhttp request
 urlpatterns = [
-    path('', include('events.urls')),
+    #path('', include('events.urls')),
     path('api/', include('apiresult.urls')),
     path('api-auth/', include('rest_framework.urls')),
 #    re_path('', views.events),

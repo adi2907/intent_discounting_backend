@@ -20,11 +20,13 @@ class Event(models.Model):
     click_text = models.TextField(default='')
     # add product properties
     product_id = models.TextField(null=True)
-    product_name = models.TextField(null=True)
+    product_name = models.CharField(max_length=255, null=True)
     product_price = models.TextField(null=True)
     # array of categories
     product_category = models.TextField(null=True)
-    product_created_date = models.TextField(null=True)
+    # add logged time, default is null
+    logged_time = models.DateTimeField(null=True)
 
     class Meta:
         db_table = 'event_raw'
+
