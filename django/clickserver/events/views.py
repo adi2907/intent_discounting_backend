@@ -7,11 +7,6 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
 import json
 
-@csrf_exempt
-def index(request):
-    print("hello")
-    return HttpResponse('Hello, world. You are at the events index.')  
-
 # accept post requests from the xhttp request and save the data to the database
 @csrf_exempt
 def events(request):

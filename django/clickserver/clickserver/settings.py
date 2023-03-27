@@ -23,10 +23,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-r$m_w185is44+at6kx-ivh9ll!+9uy2_j9bdff%^bq*z_8hlhq'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-#ALLOWED_HOSTS = ['*']
-ALLOWED_HOSTS =['3.6.225.178','almeapp.com','127.0.0.1','localhost']
+ALLOWED_HOSTS = ['*']
+#ALLOWED_HOSTS =['3.6.225.178','almeapp.com','127.0.0.1','localhost']
 CORS_ORIGIN_ALLOW_ALL = True
 SECURE_SSL_REDIRECT = True
 
@@ -95,6 +95,7 @@ DATABASES = {
             'OPTIONS':{
                 'read_default_file':'/home/ubuntu/clickstream/auth/mysql.cnf'
             },
+            # 'NAME':'events',
             # 'USER':'root',
             # 'PASSWORD':'nexarc@123',
             # #ip address of the database
@@ -104,10 +105,10 @@ DATABASES = {
             
             # 'ENGINE':'django.db.backends.mysql',
             # 'NAME':'events',
-            # 'USER':'user',
+            # 'USER':'new_user',
             # 'PASSWORD':'Circuit@123',
             # #ip address of the database
-            # 'HOST':'ec2-3-6-225-178.ap-south-1.compute.amazonaws.com',
+            # 'HOST':'3.6.225.178',
             # #'HOST':'localhost',
             # 'PORT':'3306',
             },

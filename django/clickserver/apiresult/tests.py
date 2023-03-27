@@ -11,8 +11,8 @@ from datetime import datetime
 class TestUpdateDatabase(TestCase):
     def setUp(self):
         self.app_name = 'desi_sandook'
-        self.start_time = datetime(2023, 1, 5, 0, 0, 0)
-        self.end_time = datetime(2023, 1, 5, 1, 0, 0)
+        self.start_time = datetime(2023, 2, 1, 0, 0, 0)
+        self.end_time = datetime(2023, 2, 2, 0, 0, 0)
         
    # check number of tokens in User model is equal to number of tokens in Event model
     def test_users(self):
