@@ -6,17 +6,10 @@ import numpy as np
 from django.db import connections
 from datetime import timedelta
 from celery import shared_task,group,chain
-from django.core import serializers
-from django.http import JsonResponse
-import json
-#from .apilogger import logger
 import logging
 logger = logging.getLogger(__name__)
 from concurrent.futures import ThreadPoolExecutor
 import concurrent.futures
-import redis
-from django.conf import settings
-
 
 
 @shared_task
@@ -141,7 +134,7 @@ def update_individual_user_activities(user_token, events_data, app_name):
 
     # Update identified user
     userid_events = [event for event in user_events if event['user_id'] not in [None, '', 0,'0']]
-
+    
     if userid_events:
         user.user_id = userid_events[0]['user_id']
         user.user_login = userid_events[0]['user_login']
@@ -160,59 +153,56 @@ def update_individual_user_activities(user_token, events_data, app_name):
 
 
 @shared_task
-def update_database():
-          
+def update_database_chunk(start_time, end_time, app_name):
+   
+    events = Event.objects.filter(click_time__gte=start_time).filter(click_time__lte=end_time).filter(app_name=app_name)
+    # get the database ids corresponding to the events as a list
+    event_ids = events.values_list('id', flat=True).distinct()
+    event_ids = list(event_ids)
+
+    logger.info("Number of events for app_name: %s, start_time: %s, end_time: %s, number of events: %s", app_name, start_time, end_time, len(events))
+    #1. List customer tokens in this event chunk 
+    tokens = events.values_list('token', flat=True).distinct()
+    tokens = list(tokens)
+    
+    # 2. List product ids in this event chunk
+    product_ids = events.values_list('product_id', flat=True).distinct()
+    product_ids = product_ids.exclude(product_id__isnull=True).exclude(product_id='').exclude(product_id=0)
+    # extract all product ids from database with the same app_name
+    db_product_ids = Item.objects.filter(app_name=app_name).values_list('item_id', flat=True).distinct()
+    
+    new_product_ids = np.setdiff1d(product_ids, db_product_ids).tolist()
+    
+
+    # update database
+    if len(new_product_ids) > 0:
+        # update products and users in parallel using celery
+        
+        g1 = group(update_products.si(new_product_ids,event_ids,app_name,start_time),update_users.si(tokens,event_ids,app_name,start_time))
+        # chain update_user_activities to g1
+        g2 = chain(g1,update_user_activities.si(tokens,event_ids,app_name,start_time))
+    
+    else:
+        # chain user and user_activities
+        g2 = chain(update_users.si(tokens,event_ids,app_name,start_time),update_user_activities.si(tokens,event_ids,app_name,start_time))
+    
+    g2()
+    
+    
+
+@shared_task
+def update_database():    
+    time_chunk = 5
+    #start_time = datetime.now() - timedelta(days=30) - timedelta(minutes=time_chunk)
+    start_time = datetime.now() - timedelta(minutes=time_chunk)
+
     # for each app name
     # TODO: add app_name model and iterate from there
-    for app_name in Event.objects.values_list('app_name', flat=True).distinct():
-        
-        # if app_name != 'desi_sandook':
-        #     continue
-        # chunk size for events
-        time_chunk = 5
-        start_time = datetime.now() - timedelta(minutes=time_chunk)
-        #end_time = datetime.now()
-        # start_time = datetime(2023, 1, 5, 0, 0, 0)
-        # end_time = datetime(2023, 1, 5, 1, 0, 0)
+    for app_name in Event.objects.values_list('app_name', flat=True).distinct():     
+        # get all events in chunks of 5 minutes         
+        update_database_chunk(start_time, start_time+timedelta(minutes=time_chunk), app_name)
         
         
-        # get all events in chunks of 5 minutes
-       #while start_time < end_time:
-        # get events between start and end time
-        events = Event.objects.filter(click_time__gte=start_time).filter(click_time__lte=start_time+timedelta(minutes=time_chunk)).filter(app_name=app_name)
-        # get the database ids corresponding to the events as a list
-        event_ids = events.values_list('id', flat=True).distinct()
-        event_ids = list(event_ids)
-
-        logger.info("Number of events for app_name: %s, start_time: %s, end_time: %s, number of events: %s", app_name, start_time, start_time+timedelta(minutes=time_chunk), len(events))
-
-        #1. List customer tokens in this event chunk 
-        tokens = events.values_list('token', flat=True).distinct()
-        tokens = list(tokens)
         
-        # 2. List product ids in this event chunk
-        product_ids = events.values_list('product_id', flat=True).distinct()
-        product_ids = product_ids.exclude(product_id__isnull=True).exclude(product_id='').exclude(product_id=0)
-        # extract all product ids from database with the same app_name
-        db_product_ids = Item.objects.filter(app_name=app_name).values_list('item_id', flat=True).distinct()
-        
-        new_product_ids = np.setdiff1d(product_ids, db_product_ids).tolist()
-        
-
-        # update database
-        if len(new_product_ids) > 0:
-            # update products and users in parallel using celery
+                
             
-            g1 = group(update_products.si(new_product_ids,event_ids,app_name,start_time),update_users.si(tokens,event_ids,app_name,start_time))
-            # chain update_user_activities to g1
-            g2 = chain(g1,update_user_activities.si(tokens,event_ids,app_name,start_time))
-        
-        else:
-            # chain user and user_activities
-            g2 = chain(update_users.si(tokens,event_ids,app_name,start_time),update_user_activities.si(tokens,event_ids,app_name,start_time))
-        
-        g2()          
-
-        # update start time
-        #start_time = start_time+timedelta(minutes=time_chunk)
-           

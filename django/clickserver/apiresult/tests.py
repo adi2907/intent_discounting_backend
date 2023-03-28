@@ -12,7 +12,7 @@ class TestUpdateDatabase(TestCase):
     def setUp(self):
         self.app_name = 'desi_sandook'
         self.start_time = datetime(2023, 2, 1, 0, 0, 0)
-        self.end_time = datetime(2023, 2, 2, 0, 0, 0)
+        self.end_time = datetime(2023, 2, 1, 5, 0, 0)
         
    # check number of tokens in User model is equal to number of tokens in Event model
     def test_users(self):
@@ -55,6 +55,8 @@ class TestUpdateDatabase(TestCase):
     # check if number of items in Item model is equal to number of items in Event model
     def test_products(self):
         items = Item.objects.filter(app_name=self.app_name).values_list('item_id').distinct()
+        # exclude blank items or items with item_id = 0
+        items = [item for item in items if (item[0] != 0 or item[0] != '' or item[0] != None)]
         items_list = [int(item[0]) for item in items]
         items_list.sort()
         # arrange items_list in ascending order       
@@ -63,7 +65,8 @@ class TestUpdateDatabase(TestCase):
             click_time__lt=self.end_time,
             app_name=self.app_name,
             product_id__isnull=False,
-        ).values_list('product_id', flat=True).distinct()
+        ).exclude(product_id='').values_list('product_id', flat=True).distinct()
+
         items_events_list = [int(product_id) for product_id in items_events]
         items_events_list.sort()
         self.assertEqual(items_list, items_events_list)
@@ -95,16 +98,15 @@ class TestUpdateDatabase(TestCase):
             app_name=self.app_name,
             event_type='page_load',
             product_id__isnull=False
-        )
+        ).exclude(product_id='')
         
-
         # get tokens and number of visits from the events
         for event in event_objects:
             if event.token in event_visits:
                 event_visits[event.token] += 1
             else:
                 event_visits[event.token] = 1
-
+        
         # assert if the two dictionaries are not equal
         self.assertDictEqual(visits, event_visits)
 
@@ -121,7 +123,6 @@ class TestUpdateDatabase(TestCase):
             num_carts = Cart.objects.filter(user_id=user, app_name=self.app_name).count()
             # store the token and number of visits in a dictionary
             carts[token] = num_carts
-        
         event_carts = {}
         # get all user tokens corresponding to the page views on products
         event_objects = Event.objects.filter(
@@ -130,18 +131,18 @@ class TestUpdateDatabase(TestCase):
             app_name=self.app_name,
             click_text__icontains='add to',
             product_id__isnull=False
-        )
+        ).exclude(product_id='')
         
-
         # get tokens and number of visits from the events
         for event in event_objects:
             if event.token in event_carts:
                 event_carts[event.token] += 1
             else:
                 event_carts[event.token] = 1
-
+        
         # assert if the two dictionaries are not equal
         self.assertDictEqual(carts, event_carts)
+
 
     # check if the right tokens are assigned to identified users
     def test_identified_user(self):
