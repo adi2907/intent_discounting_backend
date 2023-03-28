@@ -92,9 +92,9 @@ WSGI_APPLICATION = 'clickserver.wsgi.application'
 DATABASES = {
         'default': {
             'ENGINE':'django.db.backends.mysql',
-            # 'OPTIONS':{
-            #     'read_default_file':'/home/ubuntu/clickstream/auth/mysql.cnf'
-            # },
+            'OPTIONS':{
+                'read_default_file':'/home/ubuntu/clickstream/auth/mysql.cnf'
+            },
             # 'NAME':'events',
             # 'USER':'root',
             # 'PASSWORD':'nexarc@123',
@@ -102,13 +102,13 @@ DATABASES = {
             # 'HOST':'localhost',
             # 'PORT':'3306',
             
-            'NAME':'events',
-            'USER':'new_user',
-            'PASSWORD':'Circuit@123',
-            #ip address of the database
-            'HOST':'3.6.225.178',
-            #'HOST':'localhost',
-            'PORT':'3306',
+            # 'NAME':'events',
+            # 'USER':'new_user',
+            # 'PASSWORD':'Circuit@123',
+            # #ip address of the database
+            # 'HOST':'3.6.225.178',
+            # #'HOST':'localhost',
+            # 'PORT':'3306',
             },
         }
         
