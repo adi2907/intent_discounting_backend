@@ -135,3 +135,11 @@ class MostCartedView(APIView):
         for item in queryset:
             product_ids.append(Item.objects.get(id=item['item_id']).item_id)
         return Response(product_ids)
+
+class TestVisitView(APIView):
+    def get(self, request):
+        return Response({'data': ['820', '48', '500', '53', '972']})
+
+class TestCartView(APIView):
+    def get(self, request):
+        return Response({'data': ['1227','1670']})
