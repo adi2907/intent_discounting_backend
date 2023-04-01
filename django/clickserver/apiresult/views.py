@@ -138,8 +138,35 @@ class MostCartedView(APIView):
 
 class TestVisitView(APIView):
     def get(self, request):
-        return Response({'data': ['820', '48', '500', '53', '972']})
+        visit_list = ['8816','8691','500','820','48','4976','972','5092']
+        token_visit_list = ['5638','2935','2856']
+        # get query parameters
+        token = self.request.query_params.get('token', None)
+        max_items = self.request.query_params.get('max_items', 5)
+
+        # if token is not specified
+        if token is None:
+            # return all visits subject to max_items
+            return Response(visit_list[:int(max_items)])
+        else:
+            # return visits for user with token'
+            return Response(token_visit_list[:int(max_items)])
+        
+
+
 
 class TestCartView(APIView):
     def get(self, request):
-        return Response({'data': ['1227','1670']})
+        cart_list = ['4926','2856','500','6764','48','381','5554']
+        token_cart_list = ['381','48']
+        # get query parameters
+        token = self.request.query_params.get('token', None)
+        max_items = self.request.query_params.get('max_items', 5)
+
+        # if token is not specified
+        if token is None:
+            # return all visits subject to max_items
+            return Response(cart_list[:int(max_items)])
+        else:
+            # return visits for user with token'
+            return Response(token_cart_list[:int(max_items)])
