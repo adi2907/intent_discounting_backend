@@ -57,6 +57,9 @@ class IdentifiedUser(models.Model):
     user_id = models.TextField()
     app_name = models.TextField(null=True)
     # array of sub users that are associated with this user
+    phone = models.CharField(max_length=15, null=True)
+    email = models.EmailField(null=True)
+    name = models.CharField(max_length=255, null=True)
     tokens = models.JSONField(null=True)
     logged_time = models.DateTimeField(auto_now_add=True,null=True)
     

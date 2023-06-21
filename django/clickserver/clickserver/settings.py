@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'apiresult',
     'rest_framework.authtoken',
     'celery',
+    'notification',
 ]
 
 MIDDLEWARE = [

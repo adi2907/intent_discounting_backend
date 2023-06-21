@@ -7,5 +7,6 @@ from events import views
 urlpatterns = [
     path('events/', include('events.urls')),
     path('api/', include('apiresult.urls')),
+    path('notification/', include('notification.urls')),
     path('api-auth/', include('rest_framework.urls')),
 ]

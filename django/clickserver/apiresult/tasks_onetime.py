@@ -195,8 +195,8 @@ def update_database_chunk(start_time, end_time, app_name):
 def update_database():  
  
     start_time = datetime(2023, 2, 1, 0, 0, 0)
-    end_time = datetime(2023, 2, 1, 5, 0, 0)
-    time_chunk = 30
+    end_time = datetime(2023, 2, 7, 0, 0, 0)
+    time_chunk = 60
 
     # for each app name
     # TODO: add app_name model and iterate from there
