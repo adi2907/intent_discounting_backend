@@ -112,7 +112,31 @@ DATABASES = {
             # 'PORT':'3306',
             },
         }
-        
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'standard': {
+            'format': '[%(asctime)s] %(levelname)s [%(filename)s:%(lineno)d] %(message)s',
+            'datefmt': "%d/%b/%Y %H:%M:%S"
+        },
+    },
+    'handlers': {
+        'file': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': '/home/ubuntu/clickstream/django/clickserverinfo.log',
+            'formatter': 'standard',
+        },
+    },
+    'root': {
+        'handlers': ['file'],
+        'level': 'INFO',
+    },
+}
+
+      
 
 
 # Password validation

@@ -7,8 +7,9 @@ import json
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
+import logging
+logger = logging.getLogger(__name__)
 
-@csrf_exempt
 class SubmitContactView(APIView):
     def post(self,request):
         data = json.loads(request.body)
@@ -17,7 +18,7 @@ class SubmitContactView(APIView):
         phone = data.get('phone')
         email = data.get('email')
         name = data.get('name')
-         
+        logger.info("app_name: %s, alme_user_token: %s, phone: %s, email: %s, name: %s", app_name, alme_user_token, phone, email, name)
         users = IdentifiedUser.objects.filter(app_name=app_name)
         user = None
         for u in users:
