@@ -4,26 +4,26 @@ from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 from apiresult.models import IdentifiedUser, User
 import json
+from rest_framework.views import APIView
+from rest_framework.response import Response
 
 
 @csrf_exempt
-class submitContactView(View):
-    def post(self, request, *args, **kwargs):
+class SubmitContactView(APIView):
+    def post(self,request):
         data = json.loads(request.body)
         app_name = data.get('app_name')
         alme_user_token = data.get('alme_user_token')
         phone = data.get('phone')
         email = data.get('email')
         name = data.get('name')
-        
-        
+         
         users = IdentifiedUser.objects.filter(app_name=app_name)
         user = None
         for u in users:
             if any(alme_user_token == token.get('token') for token in u.tokens):
                 user = u
                 break
-                
         if user:
             # user found, update name, email and phone number for IdentifiedUser
             user.name = name
@@ -38,10 +38,14 @@ class submitContactView(View):
                 phone=phone,
                 tokens=[{"token": alme_user_token}]
             )
+        # try saving user else return error response
         try:
             user.save()
         except Exception as e:
-            return JsonResponse({"Error saving identified user Alme": str(e)}, status=500)
+            return Response({"Error in sending Alme contact details": str(e)})
+
+
+   
    
     
 
