@@ -126,13 +126,20 @@ LOGGING = {
         'file': {
             'level': 'INFO',
             'class': 'logging.FileHandler',
-            'filename': '/home/ubuntu/clickstream/django/clickserverinfo.log',
+            'filename': '/home/ubuntu/clickstream/django/clickserver/logs/info.log',
             'formatter': 'standard',
         },
     },
     'root': {
         'handlers': ['file'],
         'level': 'INFO',
+    },
+    'loggers': {
+        'django.request': {
+            'handlers': ['file'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
     },
 }
 

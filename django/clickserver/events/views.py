@@ -6,11 +6,14 @@ from .models import Event
 from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
 import json
+import logging
+logger = logging.getLogger(__name__)
 
 # accept post requests from the xhttp request and save the data to the database
 @csrf_exempt
 def events(request):
     if request.method == 'GET':
+#        logger.info("Got a get request")
         return HttpResponse("Hello, world. You're at the events index.")
 
     if request.method == 'POST':

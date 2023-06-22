@@ -42,7 +42,9 @@ class SubmitContactView(APIView):
         # try saving user else return error response
         try:
             user.save()
+            return Response({"status": "success"}, status=200)
         except Exception as e:
+            logger.info(str(e))
             return Response({"Error in sending Alme contact details": str(e)})
 
 
