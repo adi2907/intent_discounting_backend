@@ -200,6 +200,8 @@ def update_database():
     # TODO: add app_name model and iterate from there
     for app_name in Event.objects.values_list('app_name', flat=True).distinct():     
         # get all events in chunks of 5 minutes         
+        #if app_name == 'desi_sandook':
+        #    continue
         update_database_chunk(start_time, start_time+timedelta(minutes=time_chunk), app_name)
         
         
