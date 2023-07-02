@@ -20,7 +20,7 @@ class Event(models.Model):
     click_text = models.TextField(default='')
     # add product properties
     product_id = models.CharField(max_length=255,null=True,db_index=True)
-    product_name = models.CharField(max_length=255, null=True)
+    product_name = models.CharField(max_length=255, null=True,db_index=True)
     product_price = models.TextField(null=True)
     # array of categories
     product_category = models.TextField(null=True)
