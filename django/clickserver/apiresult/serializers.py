@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, Item,Purchase, Visits, Cart, IdentifiedUser
+from .models import *
 
 # create serializer for user model
 class UserSerializer(serializers.ModelSerializer):
@@ -37,3 +37,8 @@ class MostVisitedSerializer(serializers.ModelSerializer):
     class Meta:
         model = Item
         fields = ['item_id','num_visits']
+
+class UserSummarySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserSummary,
+        fields = ['user_token', 'last_visited', 'last_carted','recommended']

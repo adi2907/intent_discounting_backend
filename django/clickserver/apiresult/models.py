@@ -64,6 +64,13 @@ class IdentifiedUser(models.Model):
     logged_time = models.DateTimeField(auto_now_add=True,null=True)
     
 
+class UserSummary(models.Model):
+    user_token = models.CharField(max_length=255,db_index=True)
+    app_name = models.CharField(max_length=255,null=True,db_index=True)
+    last_visited = models.JSONField(null=True, blank=True, default=list)
+    last_carted = models.JSONField(null=True, blank=True, default=list)
+    recommended = models.JSONField(null=True, blank=True, default=list)
+    logged_time = models.DateTimeField(auto_now=True)
     
 
 
