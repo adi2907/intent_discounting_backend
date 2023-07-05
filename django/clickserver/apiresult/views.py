@@ -136,6 +136,21 @@ class MostCartedView(APIView):
             product_ids.append(Item.objects.get(id=item['item_id']).item_id)
         return Response(product_ids)
 
+# check if user is new user
+class NewUserCheckView(APIView):
+    def get(self,request):
+        token = self.request.query_params.get('token', None)
+        app_name = self.request.query_params.get('app_name', None)
+
+        if token is None or app_name is None: # respond with error
+            return Response({'error': 'token and app_name must be specified'})
+        # check if user token exists in User table
+        try:
+            queryset = User.objects.get(token=token, app_name=app_name)
+            return Response({'new_user': False})
+        except:
+            return Response({'new_user': True})
+
 class UserSummaryView(APIView):
     def get(self,request):
         token = self.request.query_params.get('token', None)
@@ -154,11 +169,11 @@ class UserSummaryView(APIView):
 
 class TestVisitView(APIView):
     def get(self, request):
-        visit_list = ['8816','8691','500','820','48','4976','972','5092']
+        visit_list = ['8816','8691','500','820','48','4976','972','5092','8703','8693']
         token_visit_list = ['5638','2935','2856']
         # get query parameters
         token = self.request.query_params.get('token', None)
-        max_items = self.request.query_params.get('max_items', 5)
+        max_items = self.request.query_params.get('max_items', 10)
 
         # if token is not specified
         if token is None:
@@ -173,11 +188,11 @@ class TestVisitView(APIView):
 
 class TestCartView(APIView):
     def get(self, request):
-        cart_list = ['4926','2856','500','6764','48','381','5554']
+        cart_list = ['4926','2856','500','6764','48','381','5554','5623','5277','5179']
         token_cart_list = ['381','48']
         # get query parameters
         token = self.request.query_params.get('token', None)
-        max_items = self.request.query_params.get('max_items', 5)
+        max_items = self.request.query_params.get('max_items', 10)
 
         # if token is not specified
         if token is None:
@@ -186,3 +201,21 @@ class TestCartView(APIView):
         else:
             # return visits for user with token'
             return Response(token_cart_list[:int(max_items)])
+
+class TestVisitsUserView(APIView):
+    def get(self,request):
+        token = self.request.query_params.get('token', None)
+        app_name = self.request.query_params.get('app_name', None)
+        if token !='test_token' or app_name is None: # respond with error
+            return Response({'error': 'token and app_name must be specified'})
+        visit_list = ['1596','1702','2023','2250','3332','4610','5208','5408','7617','8019']
+        return Response(visit_list)
+
+class TestCartsUserView(APIView):
+    def get(self,request):
+        token = self.request.query_params.get('token', None)
+        app_name = self.request.query_params.get('app_name', None)
+        if token !='test_token' or app_name is None: # respond with error
+            return Response({'error': 'token and app_name must be specified'})
+        visit_list = ['7456','7129','6970','5396','3804','2767','2502','771','60','1432']
+        return Response(visit_list)
