@@ -10,7 +10,7 @@ import logging
 logger = logging.getLogger(__name__)
 from concurrent.futures import ThreadPoolExecutor
 import concurrent.futures
-
+import time
 
 @shared_task
 def update_products(new_product_ids, event_ids, app_name,start_time):
@@ -82,11 +82,11 @@ def update_individual_user(user_token, event_data, app_name):
             'last_updated': last_event['click_time']
         })
     # if user is created then create user_summary object
-    if created:
-        user_summary = UserSummary(user_token=user_token, app_name =app_name, last_visited=[], last_carted=[], recommended=[], logged_time=last_event['click_time'])
-        user_summary.save()
+    #if created:
+    #    user_summary = UserSummary(user_token=user_token, app_name =app_name, last_visited=[], last_carted=[], recommended=[], logged_time=last_event['click_time'])
+    #    user_summary.save()
 
-    elif not created:
+    if not created:
         user.last_visit = last_event['click_time']
         user.last_updated = last_event['click_time']
     user.save()
@@ -120,11 +120,11 @@ def update_individual_user_activities(user_token, events_data, app_name):
 
     # Update visit and cart events
     if product_ids:
-        try:
-            user_summary = UserSummary.objects.get(user_token=user_token, app_name=app_name)
-        except UserSummary.DoesNotExist:
-            logger.info("Exception getting user summary object: " + user_token)
-            return
+        #try:
+        #    user_summary = UserSummary.objects.get(user_token=user_token, app_name=app_name)
+        #except UserSummary.DoesNotExist:
+        #    logger.info("Exception getting user summary object: " + user_token)
+        #    return
 
         for product_id in product_ids:
             visit_events = [event for event in user_events if event['product_id'] == product_id and event['event_type'] == 'page_load']
@@ -137,10 +137,10 @@ def update_individual_user_activities(user_token, events_data, app_name):
             
                 # update user_summary
                 # if product_id is in last_visited, remove it and append to the front else append to the front
-                if product_id in user_summary.last_visited:
-                    user_summary.last_visited.remove(product_id)
-                user_summary.last_visited.insert(0, product_id)
-                user_summary.logged_time = event['click_time']
+         #       if product_id in user_summary.last_visited:
+         #           user_summary.last_visited.remove(product_id)
+         #       user_summary.last_visited.insert(0, product_id)
+         #       user_summary.logged_time = event['click_time']
 
             cart_events = [event for event in user_events if event['product_id'] == product_id and event['click_text'] is not None and 'add to' in event['click_text'].lower()]
 
@@ -149,15 +149,15 @@ def update_individual_user_activities(user_token, events_data, app_name):
                 cart = Cart(user=user, item=item, app_name=app_name, created_at=event['click_time'])
                 cart.save()
                 # update user_summary
-                if product_id in user_summary.last_carted:
-                    user_summary.last_carted.remove(product_id)
-                user_summary.last_carted.insert(0, product_id)
-                user_summary.logged_time = event['click_time']
+         #       if product_id in user_summary.last_carted:
+         #           user_summary.last_carted.remove(product_id)
+         #       user_summary.last_carted.insert(0, product_id)
+         #       user_summary.logged_time = event['click_time']
 
         # keep only the last 20 items in last_visited and last_carted
-        user_summary.last_visited = user_summary.last_visited[:20]
-        user_summary.last_carted = user_summary.last_carted[:20]
-        user_summary.save()
+        #user_summary.last_visited = user_summary.last_visited[:20]
+        #user_summary.last_carted = user_summary.last_carted[:20]
+        #user_summary.save()
 
     # Update identified user
     userid_events = [event for event in user_events if event['user_id'] not in [None, '', 0,'0']]
@@ -219,7 +219,7 @@ def update_database_chunk(start_time, end_time, app_name):
 
 @shared_task
 def update_database():    
-    time_chunk = 5
+    time_chunk = 2
     #start_time = datetime.now() - timedelta(days=30) - timedelta(minutes=time_chunk)
     start_time = datetime.now() - timedelta(minutes=time_chunk)
 

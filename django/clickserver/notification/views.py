@@ -19,19 +19,19 @@ class SubmitContactView(APIView):
         name = data.get('name')
         
         logger.info("app_name: %s, alme_user_token: %s, phone: %s, name: %s", app_name, alme_user_token, phone, name)
-        users = IdentifiedUser.objects.filter(app_name=app_name)
-        user = None
-        for u in users:
+        i_users = IdentifiedUser.objects.filter(app_name=app_name)
+        i_user = None
+        for u in i_users:
             if alme_user_token in u.tokens:    
-                user = u
+                i_user = u
                 break
-        if user:
+        if i_user:
             # user found, update name, email and phone number for IdentifiedUser
-            user.name = name
-            user.phone = phone
+            i_user.name = name
+            i_user.phone = phone
         else:
             # create new IdentifiedUser
-            user = IdentifiedUser(
+            i_user = IdentifiedUser(
                 app_name=app_name,
                 name=name,
                 phone=phone,
@@ -39,7 +39,7 @@ class SubmitContactView(APIView):
             )
         # try saving user else return error response
         try:
-            user.save()
+            i_user.save()
             return Response({"status": "success"}, status=200)
         except Exception as e:
             logger.info(str(e))

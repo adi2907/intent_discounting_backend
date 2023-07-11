@@ -6,6 +6,7 @@ from .serializers import *
 from .models import *
 from django.utils import timezone
 from django.db.models import Count
+import random
 
 
 ''' returns carts for user
@@ -63,7 +64,8 @@ class VisitsView(APIView):
         elif start_date is not None and end_date is not None:
             queryset = Visits.objects.filter(user__token=token, created_at__range=(start_date, end_date))
         else:
-            queryset = Visits.objects.filter(user__token=token)
+            # default to 7 days if no date range is specified
+            queryset = Visits.objects.filter(user__token=token, created_at__gte=timezone.now() - timezone.timedelta(days=7))
         
         # Annotate visit count and order by descending count
         queryset = queryset.values('item_id').annotate(visit_count=Count('item_id')).order_by('-visit_count')
@@ -85,8 +87,8 @@ class MostVisitedView(APIView):
         end_date = self.request.query_params.get('end_date', None)
         last_7_days = self.request.query_params.get('last_7_days', None)
         last_30_days = self.request.query_params.get('last_30_days', None)
-        # set max_items to 10 if not specified
-        max_items = self.request.query_params.get('max_items', 10)
+        # set max_items to 30 if not specified
+        max_items = self.request.query_params.get('max_items', 30)
        
 
 
@@ -97,7 +99,9 @@ class MostVisitedView(APIView):
         elif start_date is not None and end_date is not None:
             queryset = Visits.objects.filter(created_at__range=(start_date, end_date))
         else:
-            queryset = Visits.objects.all()
+            # default to 7 days if no date range is specified
+            queryset = Visits.objects.filter(created_at__gte=timezone.now() - timezone.timedelta(days=7))
+        
             
         queryset = queryset.values('item_id').annotate(count=Count('item_id')).order_by('-count')
         queryset = queryset[:int(max_items)].values('item_id')    
@@ -106,6 +110,8 @@ class MostVisitedView(APIView):
         product_ids = []
         for item in queryset:
             product_ids.append(Item.objects.get(id=item['item_id']).item_id)
+        # randomly select 10 items from product_ids
+        product_ids = random.sample(product_ids, 10)
         return Response(product_ids)
 '''   
 Returns most carted items
@@ -118,7 +124,7 @@ class MostCartedView(APIView):
         end_date = self.request.query_params.get('end_date', None)
         last_7_days = self.request.query_params.get('last_7_days', None)
         last_30_days = self.request.query_params.get('last_30_days', None)
-        max_items = self.request.query_params.get('max_items', 10)
+        max_items = self.request.query_params.get('max_items', 30)
 
         if last_7_days is not None:
             queryset = Cart.objects.filter(created_at__gte=timezone.now() - timezone.timedelta(days=7))
@@ -127,13 +133,16 @@ class MostCartedView(APIView):
         elif start_date is not None and end_date is not None:
             queryset = Cart.objects.filter(created_at__range=(start_date, end_date))
         else:
-            queryset = Cart.objects.all()
-            
+            # default to 7 days if no date range is specified
+            queryset = Cart.objects.filter(created_at__gte=timezone.now() - timezone.timedelta(days=7))
+
         queryset = queryset.values('item_id').annotate(count=Count('item_id')).order_by('-count')
         queryset = queryset[:int(max_items)].values('item_id')    
         product_ids = []
         for item in queryset:
             product_ids.append(Item.objects.get(id=item['item_id']).item_id)
+        # randomly select 10 items from product_ids
+        product_ids = random.sample(product_ids, 10)
         return Response(product_ids)
 
 # check if user is new user
