@@ -71,7 +71,6 @@ class UserSummary(models.Model):
     last_carted = models.JSONField(null=True, blank=True, default=list)
     recommended = models.JSONField(null=True, blank=True, default=list)
     logged_time = models.DateTimeField(auto_now=True)
-    
 
 
-    
+
