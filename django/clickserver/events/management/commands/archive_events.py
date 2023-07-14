@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand
 from django.forms import model_to_dict
 from django.utils import timezone
-from datetime import timedelta
+from datetime import datetime,timedelta
 from events.models import Event,ArchivedEvent
 
 class Command(BaseCommand):
@@ -12,4 +12,4 @@ class Command(BaseCommand):
         for event in events_to_archive:
             ArchivedEvent.objects.create(**model_to_dict(event))
         
-        events_to_archive.delete()
+        #events_to_archive.delete()
