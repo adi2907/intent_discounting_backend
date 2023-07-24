@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from django.db.models import Count
 import json
 import logging
+import os
 
 from apiresult.models import IdentifiedUser, User, Visits, Cart, Purchase, Item
 
@@ -81,4 +82,21 @@ class Command(BaseCommand):
         date_today = datetime.now().strftime("%Y-%m-%d")
         excel_file_name = f'identified_user_activity_{date_today}.xlsx'
         df.to_excel(excel_file_name, index=False)
+        
+        # Define email parameters
+        email = EmailMessage(
+        f"Identified user activity - {date_today}",
+        'Please find the attached file for the daily identified user activity summary.',
+        'aditya@almeapp.co',  # Replace with your actual email
+        ['helloworld.adi@gmail.com'],  # Replace with the recipient's email
+        )
 
+        # Attach the excel file to the email
+        email.attach_file(excel_file_name)
+
+        # Send the email
+        email.send()
+
+        # Delete the Excel file after sending the email
+        if os.path.exists(excel_file_name):
+            os.remove(excel_file_name)

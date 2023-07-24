@@ -197,6 +197,16 @@ CELERY_BEAT_SCHEDULE = {
     },
 }
 
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtppro.zoho.in'  # Zoho's outgoing server name
+EMAIL_PORT = 587  # You can also use 465
+EMAIL_USE_TLS = True  # Set it to False if you want to use SSL
+EMAIL_HOST_USER = 'aditya@almeapp.co'  # Your Zoho email
+EMAIL_HOST_PASSWORD = 'Circuit@123'  # Your Zoho password
+
+
+
+
 TEST_RUNNER = 'apiresult.test_runner.NoDbTestRunner'
 
 
