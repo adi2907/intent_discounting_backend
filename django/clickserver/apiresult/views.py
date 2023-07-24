@@ -35,10 +35,8 @@ class CartView(APIView):
             queryset = Cart.objects.filter(user__token=token, created_at__range=(start_date, end_date))
         else:
             queryset = Cart.objects.filter(user__token=token)
-        
-        queryset = queryset.values('product_id').annotate(count=Count('product_id')).order_by('-count')[:int(max_items)]
-        queryset = queryset[:int(max_items)]  
-        product_ids = [Item.objects.get(id=item['product_id']).product_id for item in queryset]      
+        queryset = queryset.values('item__product_id').annotate(count=Count('item__product_id')).order_by('-count')[:int(max_items)]
+        product_ids = [Item.objects.get(product_id=item['item__product_id']).product_id for item in queryset]
         return Response(product_ids)
 
 ''' returns visits for user in descending order of number of visits
@@ -68,10 +66,8 @@ class VisitsView(APIView):
             queryset = Visits.objects.filter(user__token=token, created_at__gte=timezone.now() - timezone.timedelta(days=7))
         
         # Annotate visit count and order by descending count
-        queryset = queryset.values('product_id').annotate(visit_count=Count('product_id')).order_by('-visit_count')
-        queryset = queryset[:int(max_items)]       
-
-        product_ids = [Item.objects.get(id=item['product_id']).product_id for item in queryset]      
+        queryset = queryset.values('item__product_id').annotate(visit_count=Count('item__product_id')).order_by('-visit_count')
+        product_ids = [Item.objects.get(product_id=item['item__product_id']).product_id for item in queryset]
         return Response(product_ids)
  
 
@@ -103,13 +99,12 @@ class MostVisitedView(APIView):
             queryset = Visits.objects.filter(created_at__gte=timezone.now() - timezone.timedelta(days=7))
         
             
-        queryset = queryset.values('product_id').annotate(count=Count('product_id')).order_by('-count')
-        queryset = queryset[:int(max_items)].values('product_id')    
-        
+        queryset = queryset.values('item__product_id').annotate(count=Count('item__product_id')).order_by('-count')
+        queryset = queryset[:int(max_items)].values('item__product_id') 
        
         product_ids = []
         for item in queryset:
-            product_ids.append(Item.objects.get(id=item['product_id']).product_id)
+            product_ids.append(Item.objects.get(product_id=item['item__product_id']).product_id)
         # randomly select 10 items from product_ids
         product_ids = random.sample(product_ids, 10)
         return Response(product_ids)
@@ -136,11 +131,12 @@ class MostCartedView(APIView):
             # default to 7 days if no date range is specified
             queryset = Cart.objects.filter(created_at__gte=timezone.now() - timezone.timedelta(days=7))
 
-        queryset = queryset.values('product_id').annotate(count=Count('product_id')).order_by('-count')
-        queryset = queryset[:int(max_items)].values('product_id')    
+        queryset = queryset.values('item__product_id').annotate(count=Count('item__product_id')).order_by('-count')
+        queryset = queryset[:int(max_items)].values('item__product_id')
+        
         product_ids = []
         for item in queryset:
-            product_ids.append(Item.objects.get(id=item['product_id']).product_id)
+            product_ids.append(Item.objects.get(product_id=item['item__product_id']).product_id)
         # randomly select 10 items from product_ids
         product_ids = random.sample(product_ids, 10)
         return Response(product_ids)
