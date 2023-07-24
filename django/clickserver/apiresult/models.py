@@ -4,7 +4,7 @@ from django.db import models
 # create item model
 class Item(models.Model):
     # item_id is interger field but can have null values or empty strings
-    item_id = models.CharField(max_length=255,null=True,db_index=True)
+    product_id = models.CharField(max_length=255,null=True,db_index=True)
     name = models.TextField(null=True)
     price = models.TextField(null=True)
     categories = models.JSONField(null=True)
@@ -17,7 +17,7 @@ class Item(models.Model):
 class User(models.Model):
     token = models.CharField(max_length=255,db_index=True)
     user_login = models.TextField()
-    user_id = models.TextField()
+    registered_user_id = models.TextField()
     app_name = models.CharField(max_length=255,null=True,db_index=True)
     num_sessions = models.IntegerField(null=True)
     # date time of last visit
@@ -54,7 +54,7 @@ class Cart(models.Model):
     
     
 class IdentifiedUser(models.Model):
-    user_id = models.TextField()
+    registered_user_id = models.TextField()
     app_name = models.CharField(max_length=255,null=True,db_index=True)
     # array of sub users that are associated with this user
     phone = models.CharField(max_length=15, null=True)

@@ -11,8 +11,8 @@ from datetime import datetime
 class TestUpdateDatabase(TestCase):
     def setUp(self):
         self.app_name = 'desi_sandook'
-        self.start_time = datetime(2023, 2, 1, 0, 0, 0)
-        self.end_time = datetime(2023, 2, 1, 5, 0, 0)
+        self.start_time = datetime(2023, 2, 1, 8, 0, 0)
+        self.end_time = datetime(2023, 2, 1, 17, 0, 0)
         
    # check number of tokens in User model is equal to number of tokens in Event model
     def test_users(self):
@@ -35,11 +35,11 @@ class TestUpdateDatabase(TestCase):
 
     # check number of user_ids in User model is equal to number of user_ids in Event model
     def test_user_ids(self):
-        user_ids = User.objects.filter(app_name=self.app_name).values_list('user_id', flat=True).distinct()
-        user_ids = [user_id for user_id in user_ids if user_id]
+        registered_user_ids = User.objects.filter(app_name=self.app_name).values_list('registered_user_id', flat=True).distinct()
+        registered_user_ids = [user_id for user_id in registered_user_ids if user_id]
         # convert user_ids to int
-        user_ids = [int(user_id) for user_id in user_ids]
-        user_ids.sort()
+        registered_user_ids = [int(user_id) for user_id in registered_user_ids]
+        registered_user_ids.sort()
 
         user_ids_events = Event.objects.filter(
             click_time__gte=self.start_time,
@@ -50,12 +50,12 @@ class TestUpdateDatabase(TestCase):
         ).values_list('user_id', flat=True).distinct()
         user_events_list = [int(user_id) for user_id in user_ids_events]
         user_events_list.sort()
-        self.assertEqual(user_ids, user_events_list)
+        self.assertEqual(registered_user_ids, user_events_list)
 
     # check if number of items in Item model is equal to number of items in Event model
     def test_products(self):
-        items = Item.objects.filter(app_name=self.app_name).values_list('item_id').distinct()
-        # exclude blank items or items with item_id = 0
+        items = Item.objects.filter(app_name=self.app_name).values_list('product_id').distinct()
+        # exclude blank items or items with product_id = 0
         items = [item for item in items if (item[0] != 0 or item[0] != '' or item[0] != None)]
         items_list = [int(item[0]) for item in items]
         items_list.sort()
@@ -73,7 +73,7 @@ class TestUpdateDatabase(TestCase):
 
     # check for duplicate items in Item model
     def test_duplicate_products(self):
-        items = Item.objects.filter(app_name=self.app_name).values_list('item_id', flat=True)
+        items = Item.objects.filter(app_name=self.app_name).values_list('product_id', flat=True)
         self.assertEqual(len(items), len(set(items)))
     
     # check if number of visits in Visit model is equal to number of visits in Event model
@@ -150,10 +150,10 @@ class TestUpdateDatabase(TestCase):
         identified_user = IdentifiedUser.objects.filter(app_name=self.app_name).first()
         if identified_user:
             
-            # get the user id
-            user_id = identified_user.user_id
+            # get the registered user id
+            registered_user_id = identified_user.registered_user_id
             # get the tokens corresponding to the user id
-            tokens = User.objects.filter(user_id=user_id, app_name=self.app_name).values_list('token', flat=True)
+            tokens = User.objects.filter(registered_user_id=registered_user_id, app_name=self.app_name).values_list('token', flat=True)
 
 
             # get the tokens corresponding to this user id from events
@@ -161,7 +161,7 @@ class TestUpdateDatabase(TestCase):
                 click_time__gte=self.start_time,
                 click_time__lt=self.end_time,
                 app_name=self.app_name,
-                user_id=user_id,
+                user_id=registered_user_id,
                 user_id__isnull=False,
                 user_id__gt=0,
             ).values_list('token', flat=True).distinct()

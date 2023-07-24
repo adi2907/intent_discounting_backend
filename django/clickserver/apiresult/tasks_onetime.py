@@ -12,7 +12,6 @@ from concurrent.futures import ThreadPoolExecutor
 import concurrent.futures
 import time
 
-
 @shared_task
 def update_products(new_product_ids, event_ids, app_name,start_time):
     logger.info("update_products start time "+str(start_time))
@@ -35,7 +34,7 @@ def update_products(new_product_ids, event_ids, app_name,start_time):
 def update_individual_product(product_id, event_data, app_name):
    
     # Check if an item with the given product_id already exists
-    item, created = Item.objects.get_or_create(item_id=product_id, app_name=app_name)
+    item, created = Item.objects.get_or_create(product_id=product_id, app_name=app_name)
 
     # Filter the event_data list for events with the specific product_id and get the last event
     product_events = [event for event in event_data if event['product_id'] == product_id]
@@ -82,6 +81,10 @@ def update_individual_user(user_token, event_data, app_name):
             'last_visit': last_event['click_time'],
             'last_updated': last_event['click_time']
         })
+    # if user is created then create user_summary object
+    #if created:
+    #    user_summary = UserSummary(user_token=user_token, app_name =app_name, last_visited=[], last_carted=[], recommended=[], logged_time=last_event['click_time'])
+    #    user_summary.save()
 
     if not created:
         user.last_visit = last_event['click_time']
@@ -104,7 +107,7 @@ def update_user_activities(tokens, event_ids, app_name,start_time):
 @shared_task
 def update_individual_user_activities(user_token, events_data, app_name):
     try:
-        user = User.objects.get(token=user_token)
+        user = User.objects.get(token=user_token,app_name=app_name)
     except:
         logger.info("Exception getting user: " + user_token)
         return
@@ -117,14 +120,27 @@ def update_individual_user_activities(user_token, events_data, app_name):
 
     # Update visit and cart events
     if product_ids:
+        #try:
+        #    user_summary = UserSummary.objects.get(user_token=user_token, app_name=app_name)
+        #except UserSummary.DoesNotExist:
+        #    logger.info("Exception getting user summary object: " + user_token)
+        #    return
+
         for product_id in product_ids:
             visit_events = [event for event in user_events if event['product_id'] == product_id and event['event_type'] == 'page_load']
-            item = Item.objects.filter(item_id=product_id).last()
+            item = Item.objects.filter(product_id=product_id).last()
 
             # Update each visit
             for event in visit_events:
                 visit = Visits(user=user, item=item, app_name=app_name, created_at=event['click_time'])
                 visit.save()
+            
+                # update user_summary
+                # if product_id is in last_visited, remove it and append to the front else append to the front
+         #       if product_id in user_summary.last_visited:
+         #           user_summary.last_visited.remove(product_id)
+         #       user_summary.last_visited.insert(0, product_id)
+         #       user_summary.logged_time = event['click_time']
 
             cart_events = [event for event in user_events if event['product_id'] == product_id and event['click_text'] is not None and 'add to' in event['click_text'].lower()]
 
@@ -132,23 +148,33 @@ def update_individual_user_activities(user_token, events_data, app_name):
             for event in cart_events:
                 cart = Cart(user=user, item=item, app_name=app_name, created_at=event['click_time'])
                 cart.save()
+                # update user_summary
+         #       if product_id in user_summary.last_carted:
+         #           user_summary.last_carted.remove(product_id)
+         #       user_summary.last_carted.insert(0, product_id)
+         #       user_summary.logged_time = event['click_time']
+
+        # keep only the last 20 items in last_visited and last_carted
+        #user_summary.last_visited = user_summary.last_visited[:20]
+        #user_summary.last_carted = user_summary.last_carted[:20]
+        #user_summary.save()
 
     # Update identified user
     userid_events = [event for event in user_events if event['user_id'] not in [None, '', 0,'0']]
     
     if userid_events:
-        user.user_id = userid_events[0]['user_id']
+        user.registered_user_id = userid_events[0]['user_id']
         user.user_login = userid_events[0]['user_login']
         user.save()
 
-        if IdentifiedUser.objects.filter(user_id=user.user_id).filter(app_name=app_name).exists():
-            identified_user = IdentifiedUser.objects.get(user_id=user.user_id, app_name=app_name)
+        if IdentifiedUser.objects.filter(registered_user_id=user.registered_user_id).filter(app_name=app_name).exists():
+            identified_user = IdentifiedUser.objects.get(registered_user_id=user.registered_user_id, app_name=app_name)
 
             if user_token not in identified_user.tokens:
                 identified_user.tokens.append(user_token)
                 identified_user.save()
         else:
-            identified_user = IdentifiedUser(user_id=user.user_id, app_name=app_name, tokens=[user_token])
+            identified_user = IdentifiedUser(registered_user_id=user.registered_user_id, app_name=app_name, tokens=[user_token])
             identified_user.save()
     connections.close_all()
 
@@ -156,7 +182,7 @@ def update_individual_user_activities(user_token, events_data, app_name):
 @shared_task
 def update_database_chunk(start_time, end_time, app_name):
    
-    events = Event.objects.filter(click_time__gte=start_time).filter(click_time__lt=end_time).filter(app_name=app_name)
+    events = Event.objects.filter(click_time__gte=start_time).filter(click_time__lte=end_time).filter(app_name=app_name)
     # get the database ids corresponding to the events as a list
     event_ids = events.values_list('id', flat=True).distinct()
     event_ids = list(event_ids)
@@ -170,7 +196,7 @@ def update_database_chunk(start_time, end_time, app_name):
     product_ids = events.values_list('product_id', flat=True).distinct()
     product_ids = product_ids.exclude(product_id__isnull=True).exclude(product_id='').exclude(product_id=0)
     # extract all product ids from database with the same app_name
-    db_product_ids = Item.objects.filter(app_name=app_name).values_list('item_id', flat=True).distinct()
+    db_product_ids = Item.objects.filter(app_name=app_name).values_list('product_id', flat=True).distinct()
     
     new_product_ids = np.setdiff1d(product_ids, db_product_ids).tolist()
     
@@ -190,18 +216,17 @@ def update_database_chunk(start_time, end_time, app_name):
     g2()
     
     
-
 @shared_task
-def update_database():  
- 
-    start_time = datetime(2023, 2, 1, 0, 0, 0)
-    end_time = datetime(2023, 2, 7, 0, 0, 0)
+def update_database():    
+    
+    start_time = datetime(2023, 2, 1, 8, 0, 0)
+    end_time = datetime(2023, 2, 1, 17, 0, 0)
     time_chunk = 60
-
     # for each app name
     # TODO: add app_name model and iterate from there
     for app_name in Event.objects.values_list('app_name', flat=True).distinct():
-        
+        if app_name != 'desi_sandook':
+            continue
         # get all events in chunks of 5 minutes
         while start_time < end_time:
                
@@ -210,6 +235,8 @@ def update_database():
             time.sleep(60)
             # update start time
             start_time = start_time+timedelta(minutes=time_chunk)
+        
+        
         
                 
             

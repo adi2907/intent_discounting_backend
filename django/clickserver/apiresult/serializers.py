@@ -36,7 +36,7 @@ class IdentifiedUserSerializer(serializers.ModelSerializer):
 class MostVisitedSerializer(serializers.ModelSerializer):
     class Meta:
         model = Item
-        fields = ['item_id','num_visits']
+        fields = ['product_id','num_visits']
 
 class UserSummarySerializer(serializers.ModelSerializer):
     class Meta:

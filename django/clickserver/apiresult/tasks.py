@@ -34,7 +34,7 @@ def update_products(new_product_ids, event_ids, app_name,start_time):
 def update_individual_product(product_id, event_data, app_name):
    
     # Check if an item with the given product_id already exists
-    item, created = Item.objects.get_or_create(item_id=product_id, app_name=app_name)
+    item, created = Item.objects.get_or_create(product_id=product_id, app_name=app_name)
 
     # Filter the event_data list for events with the specific product_id and get the last event
     product_events = [event for event in event_data if event['product_id'] == product_id]
@@ -128,7 +128,7 @@ def update_individual_user_activities(user_token, events_data, app_name):
 
         for product_id in product_ids:
             visit_events = [event for event in user_events if event['product_id'] == product_id and event['event_type'] == 'page_load']
-            item = Item.objects.filter(item_id=product_id).last()
+            item = Item.objects.filter(product_id=product_id).last()
 
             # Update each visit
             for event in visit_events:
@@ -163,18 +163,18 @@ def update_individual_user_activities(user_token, events_data, app_name):
     userid_events = [event for event in user_events if event['user_id'] not in [None, '', 0,'0']]
     
     if userid_events:
-        user.user_id = userid_events[0]['user_id']
+        user.registered_user_id = userid_events[0]['user_id']
         user.user_login = userid_events[0]['user_login']
         user.save()
 
-        if IdentifiedUser.objects.filter(user_id=user.user_id).filter(app_name=app_name).exists():
-            identified_user = IdentifiedUser.objects.get(user_id=user.user_id, app_name=app_name)
+        if IdentifiedUser.objects.filter(registered_user_id=user.registered_user_id).filter(app_name=app_name).exists():
+            identified_user = IdentifiedUser.objects.get(registered_user_id=user.registered_user_id, app_name=app_name)
 
             if user_token not in identified_user.tokens:
                 identified_user.tokens.append(user_token)
                 identified_user.save()
         else:
-            identified_user = IdentifiedUser(user_id=user.user_id, app_name=app_name, tokens=[user_token])
+            identified_user = IdentifiedUser(registered_user_id=user.registered_user_id, app_name=app_name, tokens=[user_token])
             identified_user.save()
     connections.close_all()
 
@@ -196,7 +196,7 @@ def update_database_chunk(start_time, end_time, app_name):
     product_ids = events.values_list('product_id', flat=True).distinct()
     product_ids = product_ids.exclude(product_id__isnull=True).exclude(product_id='').exclude(product_id=0)
     # extract all product ids from database with the same app_name
-    db_product_ids = Item.objects.filter(app_name=app_name).values_list('item_id', flat=True).distinct()
+    db_product_ids = Item.objects.filter(app_name=app_name).values_list('product_id', flat=True).distinct()
     
     new_product_ids = np.setdiff1d(product_ids, db_product_ids).tolist()
     
@@ -226,11 +226,12 @@ def update_database():
     # for each app name
     # TODO: add app_name model and iterate from there
     for app_name in Event.objects.values_list('app_name', flat=True).distinct():     
-        # get all events in chunks of 5 minutes         
+        # get all events in chunks of 2 minutes         
         if app_name != 'desi_sandook':
             continue
         update_database_chunk(start_time, start_time+timedelta(minutes=time_chunk), app_name)
-        
+
+
         
         
                 
