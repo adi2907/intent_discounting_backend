@@ -106,7 +106,7 @@ class MostVisitedView(APIView):
         for item in queryset:
             product_ids.append(Item.objects.get(product_id=item['item__product_id']).product_id)
         # randomly select 10 items from product_ids
-        product_ids = random.sample(product_ids, 10)
+        product_ids = random.sample(product_ids, min(len(product_ids), 10))
         return Response(product_ids)
 '''   
 Returns most carted items
@@ -138,7 +138,7 @@ class MostCartedView(APIView):
         for item in queryset:
             product_ids.append(Item.objects.get(product_id=item['item__product_id']).product_id)
         # randomly select 10 items from product_ids
-        product_ids = random.sample(product_ids, 10)
+        product_ids = random.sample(product_ids, min(len(product_ids), 10))
         return Response(product_ids)
 
 # check if user is new user

@@ -88,7 +88,7 @@ class Command(BaseCommand):
         f"Identified user activity - {date_today}",
         'Please find the attached file for the daily identified user activity summary.',
         'aditya@almeapp.co',  # Replace with your actual email
-        ['helloworld.adi@gmail.com'],  # Replace with the recipient's email
+        ['ankitk26@gmail.com','helloworld.adi@gmail.com'],  # Replace with the recipient's email
         )
 
         # Attach the excel file to the email
