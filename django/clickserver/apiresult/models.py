@@ -8,6 +8,7 @@ class Item(models.Model):
     name = models.TextField(null=True)
     price = models.TextField(null=True)
     categories = models.JSONField(null=True)
+    description = models.TextField(null=True)
     app_name = models.CharField(max_length=255,null=True,db_index=True)
     last_updated = models.DateTimeField(null=True)
     logged_time = models.DateTimeField(auto_now_add=True,null=True)
@@ -19,13 +20,18 @@ class User(models.Model):
     user_login = models.TextField()
     registered_user_id = models.TextField()
     app_name = models.CharField(max_length=255,null=True,db_index=True)
-    num_sessions = models.IntegerField(null=True)
     # date time of last visit
     last_visit = models.DateTimeField()
     # date time of first visit
     first_visit = models.DateTimeField()
     last_updated = models.DateTimeField()
     logged_time = models.DateTimeField(auto_now_add=True,null=True)
+   
+    purchase_last_4_sessions = models.IntegerField(null=True)
+    carted_last_4_sessions = models.IntegerField(null=True)
+    purchase_prev_session = models.IntegerField(null=True)
+    num_sessions_last_30_days = models.IntegerField(null=True)
+    num_sessions_last_7_days = models.IntegerField(null=True)
     
     
 class Purchase(models.Model):
@@ -73,4 +79,27 @@ class UserSummary(models.Model):
     logged_time = models.DateTimeField(auto_now=True)
 
 
+class Sessions(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE,null=True)
+    is_active = models.BooleanField(null=True,default=True)
+    app_name = models.CharField(max_length=255,null=True,db_index=True)
+    session_key = models.CharField(max_length=255,null=False,db_index=True)
+    session_start = models.DateTimeField(db_index=True)
+    session_end = models.DateTimeField(db_index=True)
+    events_count = models.IntegerField(null=True)
+    page_load_count = models.IntegerField(null=True)
+    click_count = models.IntegerField(null=True)
+    unique_products_visited = models.JSONField(null=True)
+    total_products_visited = models.IntegerField(null=True)
+    has_purchased = models.BooleanField(null=True)
+    has_carted = models.BooleanField(null=True)
+    has_checkout = models.BooleanField(null=True)
+    is_logged_in = models.BooleanField(null=True)
+    purchase_count = models.IntegerField(null=True)
+    product_total_price = models.FloatField(null=True)
+    cart_count = models.IntegerField(null=True)
+    is_paid_traffic = models.BooleanField(null=True)
+    time_spent_product_pages = models.FloatField(null=True) # time spent on product pages in seconds
+    session_duration = models.FloatField(null=True) # in seconds
+    logged_time = models.DateTimeField(auto_now_add=True,null=True,db_index=True)
 

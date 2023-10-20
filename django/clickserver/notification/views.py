@@ -2,10 +2,11 @@
 from django.http import JsonResponse
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
-from apiresult.models import IdentifiedUser, User
+from apiresult.models import *
 import json
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from apiresult.utils.config import *
 
 import logging
 logger = logging.getLogger(__name__)
@@ -46,7 +47,30 @@ class SubmitContactView(APIView):
             return Response({"Error in sending Alme contact details": str(e)})
 
 
-   
+class SaleNotificationView(APIView):
+    def get(self,request):
+        token = self.request.query_params.get('token', None)
+        app_name = self.request.query_params.get('app_name', None)
+
+        if token is None or app_name is None: # respond with error
+            return Response({'error': 'token and app_name must be specified'})
+        
+        # get the django session key from Request object
+        session_key = self.request.session.session_key
+        
+        session = Sessions.objects.get(session_key=session_key,app_name=app_name)
+        user = User.objects.get(token=token, app_name=app_name)
+
+        if user.purchase_last_4_sessions == 1:
+            return Response({'sale_notification': False})
+        else:
+            # return True if any of the threshold values TOTAL_COUNT_THRESHOLD, PL_COUNT_THRESHOLD, 
+            # SESSION_DURATION_THRESHOLD, TOTAL_PRODUCTS_THRESHOLD are met
+            if session.total_count >= TOTAL_COUNT_THRESHOLD or \
+                session.pl_count >= PL_COUNT_THRESHOLD or \
+                session.session_duration >= SESSION_DURATION_THRESHOLD or \
+                    session.total_products >= TOTAL_PRODUCTS_THRESHOLD:
+                return Response({'sale_notification': True}) 
    
     
 

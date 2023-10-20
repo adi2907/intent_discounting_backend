@@ -1,0 +1,9 @@
+# Idle time after which to start a new session
+SESSION_IDLE_TIME = 60 # 1 hour or 60 minutes
+CLICK_COUNT_THRESHOLD = 6
+TOTAL_COUNT_THRESHOLD = 11
+PL_COUNT_THRESHOLD = 5
+SESSION_DURATION_THRESHOLD = 181 # 3 minutes
+TOTAL_PRODUCTS_THRESHOLD = 2
+
+

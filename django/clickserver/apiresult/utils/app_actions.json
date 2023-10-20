@@ -1,0 +1,7 @@
+{
+    "desi_sandook":{
+        "add_to_cart": ["add to sandook"],
+        "purchase": ["order-received"],
+        "paid_traffic": ["'utm_","gclid"]
+    }
+}

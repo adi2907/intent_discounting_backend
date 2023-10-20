@@ -126,7 +126,7 @@ LOGGING = {
         'file': {
             'level': 'INFO',
             'class': 'logging.FileHandler',
-            'filename': '/home/ubuntu/clickstream/django/clickserver/logs/info.log',
+            'filename': '/Users/adityaganguli/Documents/Tech New/clickstream-server/django/clickserver/clickserver/logs/info.log',
             'formatter': 'standard',
         },
     },
@@ -142,8 +142,6 @@ LOGGING = {
         },
     },
 }
-
-      
 
 
 # Password validation
@@ -204,10 +202,29 @@ EMAIL_USE_TLS = True  # Set it to False if you want to use SSL
 EMAIL_HOST_USER = 'aditya@almeapp.co'  # Your Zoho email
 EMAIL_HOST_PASSWORD = 'Circuit@123'  # Your Zoho password
 
+SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
+SESSION_REDIS = {
+    'host': 'localhost',
+    'port': 6379,
+    'db': 0,
+    'password': '',
+    'prefix': 'session',
+    'socket_timeout': 1,
+    'retry_on_timeout': False
+}
+SESSION_REDIS_ALIAS = "default"
+# settings.py
 
-
+CACHES = {
+    'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': 'redis://localhost:6379/0',
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+        }
+    }
+}
 
 TEST_RUNNER = 'apiresult.test_runner.NoDbTestRunner'
-
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

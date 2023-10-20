@@ -1,16 +1,25 @@
 
 from datetime import datetime
-from .models import Item,User, Visits, Cart,IdentifiedUser
+from .models import *
 from events.models import Event
 import numpy as np
 from django.db import connections
-from datetime import timedelta
+from datetime import timedelta, timezone
 from celery import shared_task,group,chain
 import logging
 logger = logging.getLogger(__name__)
 from concurrent.futures import ThreadPoolExecutor
 import concurrent.futures
 import time
+from apiresult.utils.app_actions import *
+from apiresult.utils.config import *
+from django.utils import timezone
+
+
+cart_actions = app_actions['desi_sandook']['add_to_cart']
+purchase_actions = app_actions['desi_sandook']['purchase']
+paid_traffic_strings = app_actions['desi_sandook']['paid_traffic']
+
 
 @shared_task
 def update_products(new_product_ids, event_ids, app_name,start_time):
@@ -76,7 +85,6 @@ def update_individual_user(user_token, event_data, app_name):
 
     user, created = User.objects.get_or_create(token=user_token, defaults={
             'app_name': app_name,
-            'num_sessions': 0,
             'first_visit': first_event['click_time'],
             'last_visit': last_event['click_time'],
             'last_updated': last_event['click_time']
@@ -178,6 +186,124 @@ def update_individual_user_activities(user_token, events_data, app_name):
             identified_user.save()
     connections.close_all()
 
+@shared_task
+def update_sessions(tokens,session_keys, event_ids, app_name,start_time):
+    logger.info("update_sessions start time: " + str(start_time))
+    events = Event.objects.filter(id__in=event_ids)
+    events_data = events.values('id', 'token', 'click_time', 'session', 'user_id', 'user_login', 'product_id', 'event_type', 'click_text','product_price','source_url')
+    with ThreadPoolExecutor() as executor:
+        session_tasks = [executor.submit(update_individual_session, session_key,events_data, app_name) for session_key in session_keys]
+        for future in concurrent.futures.as_completed(session_tasks):
+            future.result()
+
+@shared_task
+def update_individual_session(session_key,events_data, app_name):
+    session_events = [event for event in events_data if event['session'] == session_key]
+    user_token = session_events[0]['token']
+    if not session_events:
+        return
+    # if session exists then update it else create it
+    session_variables = get_session_variables(session_events)
+    try:
+        session = Sessions.objects.get(session_key=session_key)     
+        user = User.objects.get(token=user_token,app_name=app_name)
+        session.user = user
+
+        # get all session variables
+        for key, value in session_variables.items():
+            if key in ['events_count', 'page_load_count', 'click_count', 'total_products_visited', 'purchase_count', 'cart_count',
+                       'product_total_price','session_duration']:
+                # Increment the existing attribute for these keys
+                setattr(session, key, getattr(session, key) + value)
+            
+            elif key in ['has_purchased', 'has_carted', 'has_checkout', 'is_logged_in', 'is_paid_traffic','session_end']:
+                setattr(session, key, max(getattr(session, key), value))
+            
+            elif key == 'unique_products_visited':
+                # take unique products visited and add to existing unique products visited
+                unique_products_visited = getattr(session, key)
+                unique_products_visited.extend(value)
+                unique_products_visited = list(set(unique_products_visited))
+                setattr(session, key, unique_products_visited)
+        session.logged_time = session_variables['session_end']
+        session.status = 'active'
+        session.save()
+    except:
+        session = Sessions(session_key=session_key,app_name=app_name)
+        user = User.objects.get(token=user_token,app_name=app_name)
+        session.user = user
+        # set all session variables
+        for key, value in session_variables.items():
+            setattr(session, key, value)
+        session.logged_time = session_variables['session_end']
+        session.save()
+
+
+
+def get_session_variables(session_events):
+    
+    ### For debugging
+    token = session_events[0]['token']
+    session_key = session_events[0]['session']
+
+    ### remove this later
+    # update session
+    session_start = min(session_events, key=lambda e: e['click_time'])['click_time']
+    session_start = datetime.strptime(session_start, "%Y-%m-%d %H:%M:%S.%f")
+    
+    session_end = max(session_events, key=lambda e: e['click_time'])['click_time']
+    session_end = datetime.strptime(session_end, "%Y-%m-%d %H:%M:%S.%f")
+ 
+    session_duration = (session_end - session_start).total_seconds()
+    events_count = len(session_events)
+    page_load_count = len([event for event in session_events if event['event_type'] == 'page_load'])
+    click_count = len([event for event in session_events if event['event_type'] == 'click'])
+    total_products_visited = len(set([event['product_id'] for event in session_events if event['product_id'] not in [None, '', 0]]))
+
+    
+    unique_products_visited = list(set([event['product_id'] for event in session_events if event['product_id'] not in [None, '', 0]]))
+
+    # add events where any of purchase_actions is a substring of source_url
+    purchase_count = 0
+    for event in session_events:
+        for action in purchase_actions:
+            if action.lower() in event['source_url'].lower():
+                purchase_count += 1
+                break
+    
+    # add events where any of cart_actions exactly matches click_text
+    cart_count = 0
+    for event in session_events:
+        if event['click_text']:
+            for action in cart_actions:
+                if action in event['click_text'].lower():
+                    cart_count += 1
+                    break
+
+    # has_carted = 1 if cart_count > 0 else 0
+    has_carted = 1 if cart_count > 0 else 0
+    has_purchased = 1 if purchase_count > 0 else 0
+    product_total_price = sum([float(event['product_price']) for event in session_events if event['product_price'] not in [None, '', 0]])
+
+    is_logged_in = 1 if any(event['user_id'] not in [None, '', 0,'0'] for event in session_events) else 0
+
+    is_paid_traffic = 0
+    for event in session_events:
+        for string in paid_traffic_strings:
+            if string in event['source_url'].lower():
+                is_paid_traffic = 1
+                break
+        if is_paid_traffic:
+            break
+    
+    # return a dictionary of session variables
+    return {'session_start':session_start,'session_end':session_end,'session_duration':session_duration,
+            'events_count':events_count,'page_load_count':page_load_count,
+            'click_count':click_count,'total_products_visited':total_products_visited,
+            'unique_products_visited':unique_products_visited,'purchase_count':purchase_count,
+            'cart_count':cart_count,'has_carted':has_carted,'has_purchased':has_purchased,
+            'product_total_price':product_total_price,'is_logged_in':is_logged_in,
+            'is_paid_traffic':is_paid_traffic}
 
 @shared_task
 def update_database_chunk(start_time, end_time, app_name):
@@ -199,6 +325,9 @@ def update_database_chunk(start_time, end_time, app_name):
     db_product_ids = Item.objects.filter(app_name=app_name).values_list('product_id', flat=True).distinct()
     
     new_product_ids = np.setdiff1d(product_ids, db_product_ids).tolist()
+
+    session_keys = events.values_list('session', flat=True).distinct()
+    session_keys = list(session_keys)
     
 
     # update database
@@ -207,31 +336,74 @@ def update_database_chunk(start_time, end_time, app_name):
         
         g1 = group(update_products.si(new_product_ids,event_ids,app_name,start_time),update_users.si(tokens,event_ids,app_name,start_time))
         # chain update_user_activities to g1
-        g2 = chain(g1,update_user_activities.si(tokens,event_ids,app_name,start_time))
-    
+        g2 = chain(g1,group(update_user_activities.si(tokens,event_ids,app_name,start_time),update_sessions.si(tokens,session_keys,event_ids,app_name,start_time)))
+        g3 = chain(g2,update_all_user_sessions.si())
     else:
         # chain user and user_activities
-        g2 = chain(update_users.si(tokens,event_ids,app_name,start_time),update_user_activities.si(tokens,event_ids,app_name,start_time))
+        g1 = group(update_users.si(tokens,event_ids,app_name,start_time))
+        g2 = chain(g1,group(update_user_activities.si(tokens,event_ids,app_name,start_time),update_sessions.si(tokens,session_keys,event_ids,app_name,start_time)))
+        g3 = chain(g2,update_all_user_sessions.si())
     
-    g2()
+    g3()
     
-    
+@shared_task
+def update_all_user_sessions():
+    # change is_active to false if session last logged time is more than SESSION_IDLE_TIME (1 hour)
+    sessions = Sessions.objects.filter(is_active=True)
+    for session in sessions:
+        if (timezone.now() - session.session_end).total_seconds() > (SESSION_IDLE_TIME*60):
+            session.is_active = False
+            session.save()
+            # update the user attributes
+            user = session.user
+            # excluding the current session
+            previous_4_sessions = Sessions.objects.filter(user=user).order_by('-session_end')[1:5]
+            previous_session = None
+            if len(previous_4_sessions) >= 1:
+                previous_session = previous_4_sessions[0] #most recent session excluding the current session
+                
+            purchase_history = [session.has_purchased for session in previous_4_sessions]
+            user.purchase_last_4_sessions = 1 if sum(purchase_history) > 0 else 0
+            user.carted_last_4_sessions = 1 if sum([session.has_carted for session in previous_4_sessions]) > 0 else 0
+            
+            # if previous session then assign purchase_prev_session to has_purchased of previous session else assign 0
+            if previous_session:
+                user.purchase_prev_session = previous_session.has_purchased
+
+            # number of sessions last 30 days
+            sessions_last_30_days = Sessions.objects.filter(user=user).filter(logged_time__gte=timezone.now() - timedelta(days=30))
+            user.num_sessions_last_30_days = len(sessions_last_30_days)
+
+            # number of sessions last 7 days
+            sessions_last_7_days = Sessions.objects.filter(user=user).filter(logged_time__gte=timezone.now() - timedelta(days=7))
+            user.num_sessions_last_7_days = len(sessions_last_7_days)
+            user.save()
+            
+
 
 @shared_task
 def update_database():    
-    time_chunk = 2
-    #start_time = datetime.now() - timedelta(days=30) - timedelta(minutes=time_chunk)
-    start_time = datetime.now() - timedelta(minutes=time_chunk)
-
+    #time_chunk = 2
+    #start_time = datetime.now() - timedelta(minutes=time_chunk)
+    start_time = datetime(2023, 1, 1, 0, 0, 0)
+    end_time = datetime(2023, 2, 1, 0, 0, 0)
+    time_chunk = 60
     # for each app name
     # TODO: add app_name model and iterate from there
-    for app_name in Event.objects.values_list('app_name', flat=True).distinct():     
-        # get all events in chunks of 2 minutes         
+    for app_name in Event.objects.values_list('app_name', flat=True).distinct():
         if app_name != 'desi_sandook':
             continue
-        update_database_chunk(start_time, start_time+timedelta(minutes=time_chunk), app_name)
-
-
+        # get all events in chunks of 5 minutes
+        while start_time < end_time:
+            # chain update_database_chunk and update_all_user_sessions
+                
+            update_database_chunk(start_time, start_time+timedelta(minutes=time_chunk), app_name)
+            
+            logger.info("Sleeping....")
+            time.sleep(60)
+            # update start time
+            start_time = start_time+timedelta(minutes=time_chunk)
+        
         
         
                 
