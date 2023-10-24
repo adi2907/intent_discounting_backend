@@ -26,6 +26,10 @@ def events(request):
 
         now = datetime.now()
         last_active = request.session.get('last_active')
+        # print session key and last active time
+        print('Session key:', unique_session_id)
+        if last_active is None:
+            last_active = now
         idle_period = timedelta(seconds=IDLE_TIME)
         if last_active:
             last_active = datetime.strptime(last_active, '%Y-%m-%d %H:%M:%S.%f')

@@ -383,8 +383,8 @@ def update_all_user_sessions():
 
 @shared_task
 def update_database():    
-    #time_chunk = 2
-    #start_time = datetime.now() - timedelta(minutes=time_chunk)
+    #time_chunk = 30
+    #start_time = datetime.now() - timedelta(seconds=time_chunk)
     start_time = datetime(2023, 1, 1, 0, 0, 0)
     end_time = datetime(2023, 2, 1, 0, 0, 0)
     time_chunk = 60

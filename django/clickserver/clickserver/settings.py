@@ -126,7 +126,7 @@ LOGGING = {
         'file': {
             'level': 'INFO',
             'class': 'logging.FileHandler',
-            'filename': '/Users/adityaganguli/Documents/Tech New/clickstream-server/django/clickserver/clickserver/logs/info.log',
+            'filename': '/home/ubuntu/clickstream/django/clickserver/logs/info.log',
             'formatter': 'standard',
         },
     },
@@ -191,7 +191,7 @@ CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
 CELERY_BEAT_SCHEDULE = {
     'update-every-minute': {
         'task': 'apiresult.tasks.update_database',
-        'schedule': 120.0, # 2 minutes
+        'schedule': 30, # 30 seconds
     },
 }
 
