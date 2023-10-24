@@ -1,4 +1,3 @@
-import datetime
 from django.shortcuts import render
 from datetime import datetime, timedelta
 from django.http import HttpResponse
@@ -27,12 +26,12 @@ def events(request):
         now = datetime.now()
         last_active = request.session.get('last_active')
         # print session key and last active time
-        print('Session key:', unique_session_id)
+        logger.info('Session key:', unique_session_id)
         if last_active is None:
             last_active = now
         idle_period = timedelta(seconds=IDLE_TIME)
-        if last_active:
-            last_active = datetime.strptime(last_active, '%Y-%m-%d %H:%M:%S.%f')
+        #if last_active:
+        #    last_active = datetime.strptime(last_active, '%Y-%m-%d %H:%M:%S.%f')
         if now - last_active > idle_period:
             # Create a new session identifier
             request.session.create()
@@ -51,7 +50,7 @@ def events(request):
             event.user_id = item.get('user_id', '')
 
             # convert epoch time to datetime in 'yyyy-mm-dd hh:mm:ss' format
-            event.click_time = datetime.datetime.fromtimestamp(item.get('click_time', 0)).strftime('%Y-%m-%d %H:%M:%S')
+            event.click_time = datetime.fromtimestamp(item.get('click_time', 0)).strftime('%Y-%m-%d %H:%M:%S')
             # convert the time to local time    
             #event.click_time = datetime.datetime.strptime(event.click_time, '%Y-%m-%d %H:%M:%S') + datetime.timedelta(hours=5, minutes=30)
             event.user_regd = item.get('user_regd','')
@@ -69,7 +68,7 @@ def events(request):
             event.product_category = item.get('product_category', '')
             event.product_created_date = item.get('product_created_date', '')
             event.product_description = item.get('product_description', '')
-            event.logged_time = datetime.datetime.now()
+            event.logged_time = datetime.now()
             #save the event object to the database
             event.save()
 
