@@ -212,7 +212,7 @@ def update_individual_session(session_key,events_data, app_name):
         # get all session variables
         for key, value in session_variables.items():
             if key in ['events_count', 'page_load_count', 'click_count', 'total_products_visited', 'purchase_count', 'cart_count',
-                       'product_total_price','session_duration']:
+                       'product_total_price']:
                 # Increment the existing attribute for these keys
                 setattr(session, key, getattr(session, key) + value)
             
@@ -241,24 +241,17 @@ def update_individual_session(session_key,events_data, app_name):
 
 
 def get_session_variables(session_events):
-    
-    ### For debugging
-    token = session_events[0]['token']
-    session_key = session_events[0]['session']
 
-    ### remove this later
     # update session
     session_start = min(session_events, key=lambda e: e['click_time'])['click_time']
-    session_start = datetime.strptime(session_start, "%Y-%m-%d %H:%M:%S.%f")
-    
+   
     session_end = max(session_events, key=lambda e: e['click_time'])['click_time']
-    session_end = datetime.strptime(session_end, "%Y-%m-%d %H:%M:%S.%f")
- 
-    session_duration = (session_end - session_start).total_seconds()
+    
+
     events_count = len(session_events)
     page_load_count = len([event for event in session_events if event['event_type'] == 'page_load'])
     click_count = len([event for event in session_events if event['event_type'] == 'click'])
-    total_products_visited = len(set([event['product_id'] for event in session_events if event['product_id'] not in [None, '', 0]]))
+    total_products_visited = len([event['product_id'] for event in session_events if event['product_id'] not in [None, '', 0]])
 
     
     unique_products_visited = list(set([event['product_id'] for event in session_events if event['product_id'] not in [None, '', 0]]))
@@ -297,7 +290,7 @@ def get_session_variables(session_events):
             break
     
     # return a dictionary of session variables
-    return {'session_start':session_start,'session_end':session_end,'session_duration':session_duration,
+    return {'session_start':session_start,'session_end':session_end,
             'events_count':events_count,'page_load_count':page_load_count,
             'click_count':click_count,'total_products_visited':total_products_visited,
             'unique_products_visited':unique_products_visited,'purchase_count':purchase_count,
@@ -353,6 +346,8 @@ def update_all_user_sessions():
     for session in sessions:
         if (timezone.now() - session.session_end).total_seconds() > (SESSION_IDLE_TIME*60):
             session.is_active = False
+            # update session duration
+            session.session_duration = (session.session_end - session.session_start).total_seconds()
             session.save()
             # update the user attributes
             user = session.user
@@ -383,26 +378,27 @@ def update_all_user_sessions():
 
 @shared_task
 def update_database():    
-    #time_chunk = 30
-    #start_time = datetime.now() - timedelta(seconds=time_chunk)
-    start_time = datetime(2023, 1, 1, 0, 0, 0)
-    end_time = datetime(2023, 2, 1, 0, 0, 0)
-    time_chunk = 60
-    # for each app name
-    # TODO: add app_name model and iterate from there
+    time_chunk = 30
+    start_time = datetime.now() - timedelta(seconds=time_chunk)
+    end_time = datetime.now()
+    # start_time = datetime(2023, 1, 1, 0, 0, 0)
+    # end_time = datetime(2023, 2, 1, 0, 0, 0)
+    # time_chunk = 60
+   
+    
     for app_name in Event.objects.values_list('app_name', flat=True).distinct():
-        if app_name != 'desi_sandook':
-            continue
+        update_database_chunk(start_time, end_time, app_name)
+
         # get all events in chunks of 5 minutes
-        while start_time < end_time:
-            # chain update_database_chunk and update_all_user_sessions
+        # while start_time < end_time:
+        #     # chain update_database_chunk and update_all_user_sessions
                 
-            update_database_chunk(start_time, start_time+timedelta(minutes=time_chunk), app_name)
+        #     update_database_chunk(start_time, start_time+timedelta(minutes=time_chunk), app_name)
             
-            logger.info("Sleeping....")
-            time.sleep(60)
-            # update start time
-            start_time = start_time+timedelta(minutes=time_chunk)
+        #     logger.info("Sleeping....")
+        #     time.sleep(60)
+        #     # update start time
+        #     start_time = start_time+timedelta(minutes=time_chunk)
         
         
         

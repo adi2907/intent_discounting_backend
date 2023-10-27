@@ -30,8 +30,7 @@ def events(request):
         if last_active is None:
             last_active = now
         idle_period = timedelta(seconds=IDLE_TIME)
-        #if last_active:
-        #    last_active = datetime.strptime(last_active, '%Y-%m-%d %H:%M:%S.%f')
+       
         if now - last_active > idle_period:
             # Create a new session identifier
             request.session.create()
@@ -51,8 +50,6 @@ def events(request):
 
             # convert epoch time to datetime in 'yyyy-mm-dd hh:mm:ss' format
             event.click_time = datetime.fromtimestamp(item.get('click_time', 0)).strftime('%Y-%m-%d %H:%M:%S')
-            # convert the time to local time    
-            #event.click_time = datetime.datetime.strptime(event.click_time, '%Y-%m-%d %H:%M:%S') + datetime.timedelta(hours=5, minutes=30)
             event.user_regd = item.get('user_regd','')
             event.user_agent = item.get('user_agent', '')
             event.browser = item.get('browser', '')
