@@ -7,6 +7,8 @@ from .models import *
 from django.utils import timezone
 from django.db.models import Count
 import random
+import logging
+logger = logging.getLogger(__name__)
 
 
 ''' returns carts for user
@@ -18,7 +20,7 @@ class CartView(APIView):
     def get(self, request):
         token = self.request.query_params.get('token', None)
         app_name = self.request.query_params.get('app_name', None)
-        if token or app_name is None: # respond with error
+        if not token or not app_name: 
             return Response({'error': 'token and app_name must be specified'})
         max_items = self.request.query_params.get('max_items', 10)
         
@@ -32,18 +34,21 @@ class CartView(APIView):
 Usage: "almeapp.com/api/visits/?token=q6wxm4v47y9&app_name=test_shopify&max_items=5"
 '''
 class VisitsView(APIView):
-    def get(self, request):
-        token = self.request.query_params.get('token', None)
-        app_name = self.request.query_params.get('app_name', None)
-        if token or app_name is None: # respond with error
-            return Response({'error': 'token and app_name must be specified'})
-        max_items = self.request.query_params.get('max_items', 10)
-        queryset = Visits.objects.filter(user__token=token,app_name=app_name, created_at__gte=timezone.now() - timezone.timedelta(days=7))
-        
-        # Annotate visit count and order by descending count
-        queryset = queryset.values('item__product_id').annotate(visit_count=Count('item__product_id')).order_by('-visit_count')[:int(max_items)]
-        product_ids = [Item.objects.get(product_id=item['item__product_id']).product_id for item in queryset]
-        return Response(product_ids)
+
+    class VisitsView(APIView):
+        def get(self, request):
+            token = request.query_params.get('token', None)
+            app_name = request.query_params.get('app_name', None)
+            if not token or not app_name: 
+                return Response({'error': 'token and app_name must be specified'})
+
+            max_items = request.query_params.get('max_items', 10)
+            queryset = Visits.objects.filter(user__token=token,app_name=app_name, created_at__gte=timezone.now() - timezone.timedelta(days=7))
+            
+            # Annotate visit count and order by descending count
+            queryset = queryset.values('item__product_id').annotate(visit_count=Count('item__product_id')).order_by('-visit_count')[:int(max_items)]
+            product_ids = [Item.objects.get(product_id=item['item__product_id']).product_id for item in queryset]
+            return Response(product_ids)
  
 
 '''
@@ -54,7 +59,7 @@ Usage: "almeapp.com/api/most_visited/?app_name=test_shopify"
 class MostVisitedView(APIView):
     def get(self,request):
         app_name = self.request.query_params.get('app_name', None)
-        if app_name is None: # respond with error
+        if not app_name: # respond with error
             return Response({'error': 'app_name must be specified'})
             
         queryset = Visits.objects.filter(app_name=app_name, created_at__gte=timezone.now() - timezone.timedelta(days=7))
@@ -63,6 +68,7 @@ class MostVisitedView(APIView):
         product_ids = []
         for item in queryset:
             product_ids.append(Item.objects.get(product_id=item['item__product_id']).product_id)
+        logger.info(product_ids)
         # randomly select 10 items from product_ids
         product_ids = random.sample(product_ids, min(len(product_ids), 10))
         return Response(product_ids)
@@ -73,7 +79,7 @@ Usage: "almeapp.com/api/most_carted/?app_name=test_shopify"
 class MostCartedView(APIView):
     def get(self,request):
         app_name = self.request.query_params.get('app_name', None)
-        if app_name is None: # respond with error
+        if not app_name: 
             return Response({'error': 'app_name must be specified'})
             
         queryset = Cart.objects.filter(app_name=app_name, created_at__gte=timezone.now() - timezone.timedelta(days=7))
@@ -93,7 +99,7 @@ class NewUserCheckView(APIView):
         token = self.request.query_params.get('token', None)
         app_name = self.request.query_params.get('app_name', None)
 
-        if token is None or app_name is None: # respond with error
+        if token is None or app_name is None: 
             return Response({'error': 'token and app_name must be specified'})
         # check if user token exists in User table
         try:

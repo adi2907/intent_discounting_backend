@@ -18,25 +18,30 @@ def events(request):
         return HttpResponse("Hello, world. You're at the events index.")
 
     if request.method == 'POST':
-         # Ensure session key exists
-        if request.session.session_key is None:
-            request.session.create()
-        unique_session_id = request.session.session_key
-
         now = datetime.now()
-        last_active = request.session.get('last_active')
-        # print session key and last active time
-        logger.info('Session key:', unique_session_id)
-        if last_active is None:
-            last_active = now
-        idle_period = timedelta(seconds=IDLE_TIME)
-       
-        if now - last_active > idle_period:
-            # Create a new session identifier
-            request.session.create()
-            unique_session_id = request.session.session_key
 
+        # Ensure session key exists and get last active time
+        unique_session_id = request.session.session_key
+        last_active_str = request.session.get('last_active')
+        
+        if last_active_str:
+            last_active = datetime.strptime(last_active_str, '%Y-%m-%d %H:%M:%S.%f')
+            idle_period = timedelta(seconds=IDLE_TIME)
+            
+            if now - last_active > idle_period:
+                # Create a new session identifier due to inactivity
+                logger.info('Creating new session due to inactivity')
+                request.session.create()
+                unique_session_id = request.session.session_key
+        
+        else:
+            # No last active time recorded, so record the current time
+            request.session['last_active'] = str(now)
+        
         request.session['last_active'] = str(now)
+        request.session.modified = True
+
+        logger.info('Session key: %s', unique_session_id)
 
         # json loads the request body
         data = json.loads(request.body)

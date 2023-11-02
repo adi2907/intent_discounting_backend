@@ -213,7 +213,8 @@ SESSION_REDIS = {
     'retry_on_timeout': False
 }
 SESSION_REDIS_ALIAS = "default"
-# settings.py
+
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 
 CACHES = {
     'default': {
