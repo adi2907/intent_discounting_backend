@@ -22,7 +22,9 @@ def events(request):
 
         # Ensure session key exists and get last active time
         unique_session_id = request.session.session_key
+        logger.info('Session key: %s', unique_session_id)
         last_active_str = request.session.get('last_active')
+        logger.info('Last active: %s', last_active_str)
         
         if last_active_str:
             last_active = datetime.strptime(last_active_str, '%Y-%m-%d %H:%M:%S.%f')
