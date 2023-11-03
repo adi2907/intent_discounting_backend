@@ -26,6 +26,12 @@ def events(request):
         last_active_str = request.session.get('last_active')
         logger.info('Last active: %s', last_active_str)
         
+        if not unique_session_id:
+            # Create a new session identifier
+            logger.info('Creating new session')
+            request.session.create()
+            unique_session_id = request.session.session_key
+
         if last_active_str:
             last_active = datetime.strptime(last_active_str, '%Y-%m-%d %H:%M:%S.%f')
             idle_period = timedelta(seconds=IDLE_TIME)
