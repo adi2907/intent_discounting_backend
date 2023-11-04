@@ -24,15 +24,10 @@ def events(request):
     if request.method == 'POST':
         # json loads the request body
         data = json.loads(request.body)
-        session_key = request.session.session_key
-        if not session_key or session_key == '':
-            # create a new session
-            request.session['session_key'] = uuid4().hex
-            request.session['last_activity'] = timezone.now()
-            session_key = request.session.session_key
-            request.session.save()
+        if not request.session.session_key:
+            request.session['last_activity'] = timezone.now().strftime('%Y-%m-%d %H:%M:%S')
             request.session.modified = True
-            
+        session_key = request.session.session_key  
         # Iterate in the data and save each item as an event
         for item in data:
             event = Event()
