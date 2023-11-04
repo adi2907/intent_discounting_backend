@@ -81,6 +81,9 @@ WSGI_APPLICATION = 'clickserver.wsgi.application'
 # use backend db for sessions
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 SESSION_SAVE_EVERY_REQUEST = True
+SESSION_COOKIE_SAMESITE = 'None'
+SESSION_COOKIE_SECURE = True
+
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 
