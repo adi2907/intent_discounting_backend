@@ -4,7 +4,6 @@ from django.http import HttpResponse
 from django.shortcuts import render
 from .models import Event
 from django.views.decorators.csrf import csrf_exempt
-from django.contrib.sessions.models import Session
 from django.utils import timezone
 import json
 import logging
@@ -15,21 +14,25 @@ IDLE_TIME = 60*30 # 30 minutes
 # accept post requests from the xhttp request and save the data to the database
 @csrf_exempt
 def events(request):
-    # print all contents of request object
-    attributes = {}
-    for attr in dir(request):
-        if not callable(getattr(request, attr)) and not attr.startswith("_"):
-            attributes[attr] = getattr(request, attr)
-    logger.info(attributes)
+    
     if request.method == 'GET':
 #        logger.info("Got a get request")
         return HttpResponse("Hello, world. You're at the events index.")
+    for key,value in request.session.items():
+        logger.info("key: %s value: %s", key, value)
 
     if request.method == 'POST':
         # json loads the request body
         data = json.loads(request.body)
-        session_key = data[0].get('session_key', '')
-
+        session_key = request.session.session_key
+        if not session_key or session_key == '':
+            # create a new session
+            request.session['session_key'] = uuid4().hex
+            request.session['last_activity'] = timezone.now()
+            session_key = request.session.session_key
+            request.session.save()
+            request.session.modified = True
+            
         # Iterate in the data and save each item as an event
         for item in data:
             event = Event()

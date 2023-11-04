@@ -78,8 +78,9 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'clickserver.wsgi.application'
-
-
+# use backend db for sessions
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+SESSION_SAVE_EVERY_REQUEST = True
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 
@@ -202,8 +203,7 @@ EMAIL_USE_TLS = True  # Set it to False if you want to use SSL
 EMAIL_HOST_USER = 'aditya@almeapp.co'  # Your Zoho email
 EMAIL_HOST_PASSWORD = 'Circuit@123'  # Your Zoho password
 
-# use backend db for sessions
-SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+
 
 # SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
 # SESSION_REDIS = {
