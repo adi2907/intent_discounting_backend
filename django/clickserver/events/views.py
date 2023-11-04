@@ -15,6 +15,12 @@ IDLE_TIME = 60*30 # 30 minutes
 # accept post requests from the xhttp request and save the data to the database
 @csrf_exempt
 def events(request):
+    # print all contents of request object
+    attributes = {}
+    for attr in dir(request):
+        if not callable(getattr(request, attr)) and not attr.startswith("_"):
+            attributes[attr] = getattr(request, attr)
+    logger.info(attributes)
     if request.method == 'GET':
 #        logger.info("Got a get request")
         return HttpResponse("Hello, world. You're at the events index.")
@@ -22,16 +28,7 @@ def events(request):
     if request.method == 'POST':
         # json loads the request body
         data = json.loads(request.body)
-        session_key = data.get('session_id')
-        if session_key:
-            # Check if the provided session_key is valid
-            try:
-                Session.objects.get(session_key=session_key)
-            except Session.DoesNotExist:
-                session_key = None
-        if not session_key:
-            request.session.create()
-            session_key = request.session.session_key
+        session_key = data[0].get('session_key', '')
 
         # Iterate in the data and save each item as an event
         for item in data:
