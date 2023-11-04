@@ -8,6 +8,7 @@ from django.utils import timezone
 import json
 import logging
 logger = logging.getLogger(__name__)
+from uuid import uuid4
 
 IDLE_TIME = 60*30 # 30 minutes
 # accept post requests from the xhttp request and save the data to the database
@@ -18,38 +19,11 @@ def events(request):
         return HttpResponse("Hello, world. You're at the events index.")
 
     if request.method == 'POST':
-        now = datetime.now()
+        # get the session id from the request
+        if not request.session.get('unique_session_id'):
+            request.session['unique_session_id'] = str(uuid4())
 
-        # Ensure session key exists and get last active time
-        unique_session_id = request.session.session_key
-        logger.info('Session key: %s', unique_session_id)
-        last_active_str = request.session.get('last_active')
-        logger.info('Last active: %s', last_active_str)
-        
-        if not unique_session_id:
-            # Create a new session identifier
-            logger.info('Creating new session')
-            request.session.create()
-            unique_session_id = request.session.session_key
-
-        if last_active_str:
-            last_active = datetime.strptime(last_active_str, '%Y-%m-%d %H:%M:%S.%f')
-            idle_period = timedelta(seconds=IDLE_TIME)
-            
-            if now - last_active > idle_period:
-                # Create a new session identifier due to inactivity
-                logger.info('Creating new session due to inactivity')
-                request.session.create()
-                unique_session_id = request.session.session_key
-        
-        else:
-            # No last active time recorded, so record the current time
-            request.session['last_active'] = str(now)
-        
-        request.session['last_active'] = str(now)
-        request.session.modified = True
-
-        logger.info('Session key: %s', unique_session_id)
+        unique_session_id = request.session['unique_session_id']
 
         # json loads the request body
         data = json.loads(request.body)

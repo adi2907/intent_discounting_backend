@@ -202,29 +202,32 @@ EMAIL_USE_TLS = True  # Set it to False if you want to use SSL
 EMAIL_HOST_USER = 'aditya@almeapp.co'  # Your Zoho email
 EMAIL_HOST_PASSWORD = 'Circuit@123'  # Your Zoho password
 
-SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
-SESSION_REDIS = {
-    'host': 'localhost',
-    'port': 6379,
-    'db': 0,
-    'password': '',
-    'prefix': 'session',
-    'socket_timeout': 1,
-    'retry_on_timeout': False
-}
-SESSION_REDIS_ALIAS = "default"
+# use backend db for sessions
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 
-SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+# SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
+# SESSION_REDIS = {
+#     'host': 'localhost',
+#     'port': 6379,
+#     'db': 0,
+#     'password': '',
+#     'prefix': 'session',
+#     'socket_timeout': 1,
+#     'retry_on_timeout': False
+# }
+# SESSION_REDIS_ALIAS = "default"
 
-CACHES = {
-    'default': {
-        'BACKEND': 'django_redis.cache.RedisCache',
-        'LOCATION': 'redis://localhost:6379/0',
-        'OPTIONS': {
-            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
-        }
-    }
-}
+# SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+
+# CACHES = {
+#     'default': {
+#         'BACKEND': 'django_redis.cache.RedisCache',
+#         'LOCATION': 'redis://localhost:6379/0',
+#         'OPTIONS': {
+#             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+#         }
+#     }
+# }
 
 TEST_RUNNER = 'apiresult.test_runner.NoDbTestRunner'
 
