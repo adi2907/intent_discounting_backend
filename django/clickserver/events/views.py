@@ -4,6 +4,7 @@ from django.http import HttpResponse
 from django.shortcuts import render
 from .models import Event
 from django.views.decorators.csrf import csrf_exempt
+from django.contrib.sessions.models import Session
 from django.utils import timezone
 import json
 import logging
@@ -19,19 +20,24 @@ def events(request):
         return HttpResponse("Hello, world. You're at the events index.")
 
     if request.method == 'POST':
-        # get the session id from the request
-        if not request.session.get('unique_session_id'):
-            request.session['unique_session_id'] = str(uuid4())
-
-        unique_session_id = request.session['unique_session_id']
-
         # json loads the request body
         data = json.loads(request.body)
+        session_key = data.get('session_id')
+        if session_key:
+            # Check if the provided session_key is valid
+            try:
+                Session.objects.get(session_key=session_key)
+            except Session.DoesNotExist:
+                session_key = None
+        if not session_key:
+            request.session.create()
+            session_key = request.session.session_key
+
         # Iterate in the data and save each item as an event
         for item in data:
             event = Event()
             event.token = item.get('token', '')
-            event.session = unique_session_id
+            event.session = session_key
             event.user_login = item.get('user_login', '')
             event.user_id = item.get('user_id', '')
 
