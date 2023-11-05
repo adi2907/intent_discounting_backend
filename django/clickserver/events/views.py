@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from datetime import datetime, timedelta
-from django.http import HttpResponse
+from django.http import HttpResponse,JsonResponse
 from django.shortcuts import render
 from .models import Event
 from django.views.decorators.csrf import csrf_exempt
@@ -18,21 +18,20 @@ def events(request):
     if request.method == 'GET':
 #        logger.info("Got a get request")
         return HttpResponse("Hello, world. You're at the events index.")
-    for key,value in request.session.items():
-        logger.info("key: %s value: %s", key, value)
-
     if request.method == 'POST':
         # json loads the request body
         data = json.loads(request.body)
-        if not request.session.session_key:
-            request.session['last_activity'] = timezone.now().strftime('%Y-%m-%d %H:%M:%S')
-            request.session.modified = True
-        session_key = request.session.session_key  
-        # Iterate in the data and save each item as an event
+        events = data.get('events', [])
+        session_id = data.get('session_id')
+        lastEventTimestamp = data.get('lastEventTimestamp')
+        current_time = datetime.now()
+        if not session_id or (lastEventTimestamp and (current_time - datetime.fromtimestamp(int(lastEventTimestamp))).total_seconds() > IDLE_TIME):
+            session_id = uuid4().hex
+       
         for item in data:
             event = Event()
             event.token = item.get('token', '')
-            event.session = session_key
+            event.session = session_id
             event.user_login = item.get('user_login', '')
             event.user_id = item.get('user_id', '')
 
@@ -57,5 +56,5 @@ def events(request):
             #save the event object to the database
             event.save()
 
-        return HttpResponse('success')
+        return JsonResponse({'session_id': session_id, 'success': True})
     
