@@ -10,7 +10,7 @@ import logging
 logger = logging.getLogger(__name__)
 from uuid import uuid4
 
-IDLE_TIME = 60*1 # 30 minutes
+IDLE_TIME = 60*1 # 1 minutes
 # accept post requests from the xhttp request and save the data to the database
 @csrf_exempt
 def events(request):
@@ -26,7 +26,7 @@ def events(request):
         lastEventTimestamp = data.get('lastEventTimestamp')
         alme_user_token = data.get('alme_user_token')
         current_time = datetime.now()
-        if not session_id or (lastEventTimestamp and (current_time - datetime.fromtimestamp(int(lastEventTimestamp))).total_seconds() > IDLE_TIME):
+        if lastEventTimestamp and (current_time - datetime.fromtimestamp(int(lastEventTimestamp))).total_seconds() > IDLE_TIME:
             session_id = uuid4().hex
        
         for item in events:
