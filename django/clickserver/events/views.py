@@ -23,15 +23,18 @@ def events(request):
         data = json.loads(request.body)
         events = data.get('events', [])
         session_id = data.get('session_id')
+        if not session_id:
+            session_id = uuid4().hex
         lastEventTimestamp = data.get('lastEventTimestamp')
         alme_user_token = data.get('alme_user_token')
         current_time = datetime.now()
         logger.info("Last event timestamp: %s", lastEventTimestamp)
         logger.info("Current time: %s", current_time)
-        logger.info("Time difference: %s", (current_time - datetime.fromtimestamp(int(lastEventTimestamp))).total_seconds())
+        if lastEventTimestamp:
+            logger.info("Time difference: %s", (current_time - datetime.fromtimestamp(int(lastEventTimestamp))).total_seconds())
         if lastEventTimestamp and (current_time - datetime.fromtimestamp(int(lastEventTimestamp))).total_seconds() > IDLE_TIME:
             session_id = uuid4().hex
-       
+            
         for item in events:
             event = Event()
             event.token = alme_user_token
