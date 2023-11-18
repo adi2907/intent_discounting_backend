@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from rest_framework.views import APIView
-from rest_framework.response import Response,HttpResponse
+from rest_framework.response import Response
+from django.http import HttpResponse
 from rest_framework import status
 from django.utils import timezone, parse_datetime
 from datetime import timedelta, datetime
