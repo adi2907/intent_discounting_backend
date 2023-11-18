@@ -8,7 +8,7 @@ from datetime import timedelta, datetime
 from apiresult.models import *
 from collections import defaultdict
 from django.db.models import Count
-from django.utils.dateparse import parse_datetime
+from django.utils.dateparse import parse_datetime,parse_date
 
 import logging
 logger = logging.getLogger(__name__)
@@ -28,6 +28,7 @@ Parameters: start_date - Start date of the range, end_date - End date of the ran
 Response: session_count
 '''
 
+
 def get_date_range_from_request(request):
     query_days = request.query_params.get('days', None)
     start_date = request.query_params.get('start_date', None)
@@ -36,27 +37,27 @@ def get_date_range_from_request(request):
     if query_days:
         try:
             days = int(query_days)
-            end_of_day = timezone.now().date()
+            end_of_day = datetime.now().date()
             start_of_day = end_of_day - timedelta(days=days)
         except ValueError:
             raise ValueError('Invalid value for days')
     elif start_date and end_date:
         try:
-            start_of_day = timezone.datetime.strptime(start_date, '%Y-%m-%d').date()
-            end_of_day = timezone.datetime.strptime(end_date, '%Y-%m-%d').date()
+            start_of_day = parse_date(start_date)
+            end_of_day = parse_date(end_date)
             if start_of_day > end_of_day:
                 raise ValueError('Start date cannot be after end date.')
         except ValueError:
             raise ValueError('Invalid date format or range. Use YYYY-MM-DD.')
     else:
-        end_of_day = timezone.now().date() - timedelta(days=1)
+        end_of_day = datetime.now().date() - timedelta(days=1)
         start_of_day = end_of_day
 
-    start_of_day = timezone.make_aware(timezone.datetime.combine(start_of_day, timezone.datetime.min.time()))
-    end_of_day = timezone.make_aware(timezone.datetime.combine(end_of_day, timezone.datetime.max.time()))
+    # Set start_of_day to 00:00 and end_of_day to 23:59:59.999999
+    start_of_day = datetime.combine(start_of_day, datetime.min.time())
+    end_of_day = datetime.combine(end_of_day, datetime.max.time())
 
     return start_of_day, end_of_day
-
 
 
 class SessionCountView(APIView):
@@ -187,11 +188,12 @@ class VisitConversionView(APIView):
         conversion_data = defaultdict(lambda: {'visits': 0, 'total_sessions': 0})
 
         for day in range(days):
-            end_of_day = timezone.now().date() - timedelta(days=day)
+            end_of_day = datetime.now().date() - timedelta(days=day)
             start_of_day = end_of_day - timedelta(days=1)
 
-            start_of_day = timezone.make_aware(timezone.datetime.combine(start_of_day, timezone.datetime.min.time()))
-            end_of_day = timezone.make_aware(timezone.datetime.combine(end_of_day, timezone.datetime.max.time()))
+            # Combine date with min and max time without timezone awareness
+            start_of_day = datetime.combine(start_of_day, datetime.min.time())
+            end_of_day = datetime.combine(end_of_day, datetime.max.time())
 
             total_sessions = Sessions.objects.filter(
                 logged_time__gte=start_of_day, 
@@ -230,10 +232,12 @@ class CartConversionView(APIView):
         conversion_data = defaultdict(lambda: {'visits': 0, 'total_sessions': 0})
 
         for day in range(days):
-            end_of_day = timezone.now().date() - timedelta(days=day)
+            end_of_day = datetime.now().date() - timedelta(days=day)
             start_of_day = end_of_day - timedelta(days=1)
-            start_of_day = timezone.make_aware(timezone.datetime.combine(start_of_day, timezone.datetime.min.time()))
-            end_of_day = timezone.make_aware(timezone.datetime.combine(end_of_day, timezone.datetime.max.time()))
+
+            # Combine date with min and max time for naive datetime
+            start_of_day = datetime.combine(start_of_day, datetime.min.time())
+            end_of_day = datetime.combine(end_of_day, datetime.max.time())
 
             total_sessions = Sessions.objects.filter(
                 logged_time__gte=start_of_day, 
@@ -272,11 +276,12 @@ class PurchaseConversionView(APIView):
         conversion_data = defaultdict(lambda: {'visits': 0, 'total_sessions': 0})
 
         for day in range(days):
-            end_of_day = timezone.now().date() - timedelta(days=day)
+            end_of_day = datetime.now().date() - timedelta(days=day)
             start_of_day = end_of_day - timedelta(days=1)
 
-            start_of_day = timezone.make_aware(timezone.datetime.combine(start_of_day, timezone.datetime.min.time()))
-            end_of_day = timezone.make_aware(timezone.datetime.combine(end_of_day, timezone.datetime.max.time()))
+            # Combine date with min and max time for naive datetime
+            start_of_day = datetime.combine(start_of_day, datetime.min.time())
+            end_of_day = datetime.combine(end_of_day, datetime.max.time())
 
             total_sessions = Sessions.objects.filter(
                 logged_time__gte=start_of_day, 
@@ -335,20 +340,18 @@ Notes:
 class ProductVisitsView(APIView):
 
     def get(self, request, *args, **kwargs):
-        # Get today's date and subtract one day to get the previous day
         previous_day = datetime.now().date() - timedelta(days=1)
 
-        # Default start_date is the beginning of the previous day
+        # Default start_date and end_date
         start_date = request.query_params.get('start_date', previous_day.strftime("%Y-%m-%d 00:00:00"))
-        # Default end_date is the end of the previous day
         end_date = request.query_params.get('end_date', previous_day.strftime("%Y-%m-%d 23:59:59"))
         app_name = request.query_params.get('app_name', None)
         token = request.query_params.get('token', None)
         order = request.query_params.get('order', 'desc')
 
-        # Convert dates from string to datetime
-        start_date = parse_datetime(start_date)
-        end_date = parse_datetime(end_date)
+        # Convert dates from string to naive datetime
+        start_date = datetime.strptime(start_date, "%Y-%m-%d %H:%M:%S")
+        end_date = datetime.strptime(end_date, "%Y-%m-%d %H:%M:%S")
 
         # Validate token
         if not User.objects.filter(token=token).exists():
@@ -356,7 +359,7 @@ class ProductVisitsView(APIView):
 
         # Query to get visits
         visits_query = Visits.objects.filter(
-            logged_time=(start_date, end_date),
+            logged_time__range=(start_date, end_date),
             app_name=app_name,
             user__token=token
         ).values('item__name', 'item__product_id').annotate(visit_count=Count('id'))
@@ -426,12 +429,7 @@ class ProductCartConversionView(APIView):
                 'cart_additions': cart_count,
                 'conversion_rate': conversion_rate
             }
-
         
-        if order == 'asc':
-            conversion_data.sort(key=lambda x: x['conversion_rate'])
-        else:  # Default to descending order if 'order' is not 'asc'
-            conversion_data.sort(key=lambda x: x['conversion_rate'], reverse=True)
-
+        sorted_conversion_data = sorted(conversion_data.items(), key=lambda x: x[1]['conversion_rate'], reverse=(order != 'asc'))
         return Response(conversion_data)
 
