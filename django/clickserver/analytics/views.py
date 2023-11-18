@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from django.http import HttpResponse
 from rest_framework import status
 from django.utils import timezone
-from datetime import timedelta, datetime
+from datetime import timedelta, datetime,time
 from apiresult.models import *
 from collections import defaultdict
 from django.db.models import Count
@@ -254,7 +254,7 @@ class CartConversionView(APIView):
 
             conversion_rate = (relevant_sessions / total_sessions * 100) if total_sessions > 0 else 0
 
-            conversion_data[str(start_of_day.date())]['visits'] = relevant_sessions
+            conversion_data[str(start_of_day.date())]['carts'] = relevant_sessions
             conversion_data[str(start_of_day.date())]['total_sessions'] = total_sessions
             conversion_data[str(start_of_day.date())]['conversion_rate'] = conversion_rate
 
@@ -342,26 +342,26 @@ class ProductVisitsView(APIView):
     def get(self, request, *args, **kwargs):
         previous_day = datetime.now().date() - timedelta(days=1)
 
-        # Default start_date and end_date
-        start_date = request.query_params.get('start_date', previous_day.strftime("%Y-%m-%d 00:00:00"))
-        end_date = request.query_params.get('end_date', previous_day.strftime("%Y-%m-%d 23:59:59"))
+        # Get start_date and end_date from request, or set defaults
+        start_date_str = request.query_params.get('start_date')
+        end_date_str = request.query_params.get('end_date')
         app_name = request.query_params.get('app_name', None)
-        token = request.query_params.get('token', None)
         order = request.query_params.get('order', 'desc')
 
-        # Convert dates from string to naive datetime
-        start_date = datetime.strptime(start_date, "%Y-%m-%d %H:%M:%S")
-        end_date = datetime.strptime(end_date, "%Y-%m-%d %H:%M:%S")
+        start_date = datetime.combine(previous_day, time.min)
+        end_date = datetime.combine(previous_day, time.max)
+        
+        if start_date_str:
+            start_date = datetime.combine(datetime.strptime(start_date_str, "%Y-%m-%d"), time.min)
 
-        # Validate token
-        if not User.objects.filter(token=token).exists():
-            return Response({'error': 'Invalid token'}, status=400)
+        if end_date_str:
+            end_date = datetime.combine(datetime.strptime(end_date_str, "%Y-%m-%d"), time.max)
+
 
         # Query to get visits
         visits_query = Visits.objects.filter(
             logged_time__range=(start_date, end_date),
             app_name=app_name,
-            user__token=token
         ).values('item__name', 'item__product_id').annotate(visit_count=Count('id'))
 
         if order == 'asc':
@@ -377,11 +377,10 @@ Endpoint: https://almeapp.com/analytics/product_cart_conversion
 
 Parameters:
 - app_name (required, string): Name of the application.
-- token (required, string): Authentication token for user validation.
 - order (optional, string): Sorting order of conversion rates, either 'asc' for ascending or 'desc' for descending. Default is 'desc'.
 
 Example Request:
-https://almeapp.com/analytics/product_cart_conversion?app_name=[YourAppName]&token=[YourToken]&order=desc
+https://almeapp.com/analytics/product_cart_conversion?app_name=[YourAppName]&order=desc
 
 Response Format:
 [
@@ -404,14 +403,13 @@ Notes:
 class ProductCartConversionView(APIView):
     def get(self, request, *args, **kwargs):
         app_name = request.query_params.get('app_name', None)
-        token = request.query_params.get('token', None)
         order = request.query_params.get('order', 'desc')
 
         # Validate token and app_name
-        if not app_name or not User.objects.filter(token=token).exists():
-            return Response({'error': 'Invalid token or app_name'}, status=400)
+        if not app_name:
+            return Response({'error': 'App_name must exist'}, status=400)
 
-        # Count the number of visits for each item
+        
         item_visits = Visits.objects.filter(app_name=app_name).values('item__product_id').annotate(visits_count=Count('id'))
 
         # Count the number of times each item was added to the cart
@@ -431,5 +429,5 @@ class ProductCartConversionView(APIView):
             }
         
         sorted_conversion_data = sorted(conversion_data.items(), key=lambda x: x[1]['conversion_rate'], reverse=(order != 'asc'))
-        return Response(conversion_data)
+        return Response(sorted_conversion_data)
 
