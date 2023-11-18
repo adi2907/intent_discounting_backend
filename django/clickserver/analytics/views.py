@@ -3,11 +3,12 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.http import HttpResponse
 from rest_framework import status
-from django.utils import timezone, parse_datetime
+from django.utils import timezone
 from datetime import timedelta, datetime
 from apiresult.models import *
 from collections import defaultdict
 from django.db.models import Count
+from django.utils.dateparse import parse_datetime
 
 import logging
 logger = logging.getLogger(__name__)
