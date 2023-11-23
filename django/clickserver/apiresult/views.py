@@ -104,7 +104,7 @@ class NewUserCheckView(APIView):
 
         # Check if a session exists for the given token and app_name
         sessions = Sessions.objects.filter(user__token=token, app_name=app_name)
-
+        logger.info(sessions)
         # If no sessions exist or user has only one session and it's not active, consider them new
         if not sessions.exists() or (sessions.count() <= 1 and not sessions.latest('session_start').is_active):
             return Response({'new_user': True})
