@@ -95,18 +95,21 @@ class MostCartedView(APIView):
 
 # check if user is new user
 class NewUserCheckView(APIView):
-    def get(self,request):
-        token = self.request.query_params.get('token', None)
-        app_name = self.request.query_params.get('app_name', None)
+    def get(self, request):
+        token = request.query_params.get('token', None)
+        app_name = request.query_params.get('app_name', None)
 
-        if token is None or app_name is None: 
-            return Response({'error': 'token and app_name must be specified'})
-        # check if user token exists in User table
-        try:
-            queryset = User.objects.get(token=token, app_name=app_name)
-            return Response({'new_user': False})
-        except:
+        if token is None or app_name is None:
+            return Response({'error': 'token and app_name must be specified'}, status=400)
+
+        # Check if a session exists for the given token and app_name
+        sessions = Sessions.objects.filter(user__token=token, app_name=app_name)
+
+        # If no sessions exist or user has only one session and it's not active, consider them new
+        if not sessions.exists() or (sessions.count() <= 1 and not sessions.latest('session_start').is_active):
             return Response({'new_user': True})
+        else:
+            return Response({'new_user': False})
 
         
 
