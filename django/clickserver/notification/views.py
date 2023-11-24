@@ -19,7 +19,6 @@ class SubmitContactView(APIView):
         phone = data.get('phone')
         name = data.get('name')
         
-        logger.info("app_name: %s, alme_user_token: %s, phone: %s, name: %s", app_name, alme_user_token, phone, name)
         i_users = IdentifiedUser.objects.filter(app_name=app_name)
         i_user = None
         for u in i_users:

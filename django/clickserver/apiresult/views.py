@@ -91,26 +91,6 @@ class MostCartedView(APIView):
         # randomly select 10 items from product_ids
         product_ids = random.sample(product_ids, min(len(product_ids), 10))
         return Response(product_ids)
-
-
-# check if user is new user
-class NewUserCheckView(APIView):
-    def get(self, request):
-        token = request.query_params.get('token', None)
-        app_name = request.query_params.get('app_name', None)
-
-        if token is None or app_name is None:
-            return Response({'error': 'token and app_name must be specified'}, status=400)
-
-        # Check if a session exists for the given token and app_name
-        sessions = Sessions.objects.filter(user__token=token, app_name=app_name)
-        logger.info(sessions)
-        # If no sessions exist or user has only one session and it's not active, consider them new
-        if not sessions.exists() or (sessions.count() <= 1 and not sessions.latest('session_start').is_active):
-            return Response({'new_user': True})
-        else:
-            return Response({'new_user': False})
-
         
 
 class UserSummaryView(APIView):
