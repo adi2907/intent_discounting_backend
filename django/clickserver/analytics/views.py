@@ -329,7 +329,6 @@ Parameters:
 - start_date (optional, string): Start date for filtering visits in YYYY-MM-DD HH:MM:SS format. Defaults to the beginning of the previous day.
 - end_date (optional, string): End date for filtering visits in YYYY-MM-DD HH:MM:SS format. Defaults to the end of the previous day.
 - app_name (optional, string): Application name for filtering visits.
-- token (required, string): Authentication token.
 - order (optional, string): Sort order for visit counts, either 'asc' for ascending or 'desc' for descending. Default is 'desc'.
 
 Example Request:

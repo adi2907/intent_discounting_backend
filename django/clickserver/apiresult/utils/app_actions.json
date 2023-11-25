@@ -3,5 +3,10 @@
         "add_to_cart": ["add to sandook"],
         "purchase": ["order-received"],
         "paid_traffic": ["'utm_","gclid"]
+    },
+    "almestore1.myshopify.com":{
+        "add_to_cart": ["add to cart"],
+        "purchase": ["checkouts"],
+        "paid_traffic": ["'utm_","gclid"]
     }
 }

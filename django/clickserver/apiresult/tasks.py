@@ -11,14 +11,10 @@ logger = logging.getLogger(__name__)
 from concurrent.futures import ThreadPoolExecutor
 import concurrent.futures
 import time
-from apiresult.utils.app_actions import *
+from apiresult.utils.app_actions import app_actions
 from apiresult.utils.config import *
 from django.utils import timezone
 
-
-cart_actions = app_actions['desi_sandook']['add_to_cart']
-purchase_actions = app_actions['desi_sandook']['purchase']
-paid_traffic_strings = app_actions['desi_sandook']['paid_traffic']
 
 
 @shared_task
@@ -203,7 +199,7 @@ def update_individual_session(session_key,events_data, app_name):
     if not session_events:
         return
     # if session exists then update it else create it
-    session_variables = get_session_variables(session_events)
+    session_variables = get_session_variables(session_events,app_name)
     try:
         session = Sessions.objects.get(session_key=session_key)     
         user = User.objects.get(token=user_token,app_name=app_name)
@@ -240,8 +236,12 @@ def update_individual_session(session_key,events_data, app_name):
 
 
 
-def get_session_variables(session_events):
+def get_session_variables(session_events,app_name):
 
+    cart_actions = app_actions[app_name]['add_to_cart']
+    purchase_actions = app_actions[app_name]['purchase']
+    paid_traffic_strings = app_actions[app_name]['paid_traffic']
+    
     # update session
     session_start = min(session_events, key=lambda e: e['click_time'])['click_time']
    
