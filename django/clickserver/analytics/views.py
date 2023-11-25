@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from django.http import HttpResponse
+from django.http import HttpResponse,JsonResponse
 from rest_framework import status
 from django.utils import timezone
 from datetime import timedelta, datetime,time
@@ -17,15 +17,21 @@ logger = logging.getLogger(__name__)
 API DOCUMENTATION FOR visit/user/session/cart count APIs
 1. Default Use Case (Previous Day)
 GET https://almeapp.com/analytics/[API_TYPE]_count?app_name=[YourAppName]
-Response: session_count
 2. Specific Number of Previous Days
 GET https://almeapp.com/analytics/[API_TYPE]_count?app_name=[YourAppName]&days=<number_of_days>
 Parameters: days - Number of days to look back from the current date.
-Response: session_count
 3. Specific Date Range
 GET https://almeapp.com/analytics/session_count?app_name=[YourAppName]&days=3
 Parameters: start_date - Start date of the range, end_date - End date of the range.
-Response: session_count
+
+
+Response Format:
+{
+  "session_count": number,
+  "app_name": string
+}
+
+
 '''
 
 
@@ -63,10 +69,10 @@ def get_date_range_from_request(request):
 class SessionCountView(APIView):
     def get(self, request, format=None):
         try:
-            
             app_name = request.query_params.get('app_name')
             if not app_name:
-                return HttpResponse('Error: app_name parameter is required', status=status.HTTP_400_BAD_REQUEST)
+                return Response({'error': 'app_name parameter is required'}, 
+                                status=status.HTTP_400_BAD_REQUEST)
 
             start_of_day, end_of_day = get_date_range_from_request(request)
             count = Sessions.objects.filter(
@@ -74,36 +80,40 @@ class SessionCountView(APIView):
                 logged_time__lte=end_of_day, 
                 app_name=app_name
             ).count()
-            return HttpResponse(count)
+
+            return Response({'session_count': count, 'app_name': app_name})
+
         except ValueError as e:
-            return HttpResponse('Error: ' + str(e), status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
     
+
 class UserCountView(APIView):
     def get(self, request, format=None):
         try:
-            
             app_name = request.query_params.get('app_name')
             if not app_name:
-                return HttpResponse('Error: app_name parameter is required', status=status.HTTP_400_BAD_REQUEST)
+                return Response({'error': 'app_name parameter is required'}, 
+                                status=status.HTTP_400_BAD_REQUEST)
 
             start_of_day, end_of_day = get_date_range_from_request(request)
-
             count = User.objects.filter(
                 logged_time__gte=start_of_day, 
                 logged_time__lte=end_of_day, 
                 app_name=app_name
             ).count()
-            return HttpResponse(count)
+
+            return Response({'user_count': count, 'app_name': app_name})
+
         except ValueError as e:
-            return HttpResponse('Error: ' + str(e), status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 class VisitsCountView(APIView):
     def get(self, request, format=None):
         try:
-            
             app_name = request.query_params.get('app_name')
             if not app_name:
-                return HttpResponse('Error: app_name parameter is required', status=status.HTTP_400_BAD_REQUEST)
+                return Response({'error': 'app_name parameter is required'}, 
+                                status=status.HTTP_400_BAD_REQUEST)
 
             start_of_day, end_of_day = get_date_range_from_request(request)
             count = Visits.objects.filter(
@@ -111,17 +121,19 @@ class VisitsCountView(APIView):
                 logged_time__lte=end_of_day, 
                 app_name=app_name
             ).count()
-            return HttpResponse(count)
+
+            return Response({'visit_count': count, 'app_name': app_name})
+
         except ValueError as e:
-            return HttpResponse('Error: ' + str(e), status=status.HTTP_400_BAD_REQUEST)
-        
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
 class CartCountView(APIView):
     def get(self, request, format=None):
         try:
-            
             app_name = request.query_params.get('app_name')
             if not app_name:
-                return HttpResponse('Error: app_name parameter is required', status=status.HTTP_400_BAD_REQUEST)
+                return Response({'error': 'app_name parameter is required'}, 
+                                status=status.HTTP_400_BAD_REQUEST)
 
             start_of_day, end_of_day = get_date_range_from_request(request)
             count = Cart.objects.filter(
@@ -129,17 +141,19 @@ class CartCountView(APIView):
                 logged_time__lte=end_of_day, 
                 app_name=app_name
             ).count()
-            return HttpResponse(count)
-        except ValueError as e:
-            return HttpResponse('Error: ' + str(e), status=status.HTTP_400_BAD_REQUEST)
 
+            return Response({'cart_count': count, 'app_name': app_name})
+
+        except ValueError as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
 class IdentifiedUserCountView(APIView):
     def get(self, request, format=None):
         try:
-            
             app_name = request.query_params.get('app_name')
             if not app_name:
-                return HttpResponse('Error: app_name parameter is required', status=status.HTTP_400_BAD_REQUEST)
+                return Response({'error': 'app_name parameter is required'}, 
+                                status=status.HTTP_400_BAD_REQUEST)
 
             start_of_day, end_of_day = get_date_range_from_request(request)
             count = IdentifiedUser.objects.filter(
@@ -147,9 +161,12 @@ class IdentifiedUserCountView(APIView):
                 logged_time__lte=end_of_day, 
                 app_name=app_name
             ).count()
-            return HttpResponse(count)
+
+            return Response({'identified_user_count': count, 'app_name': app_name})
+
         except ValueError as e:
-            return HttpResponse('Error: ' + str(e), status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)   
+
 
 '''
 API DOCUMENTATION FOR CONVERSION APIs
