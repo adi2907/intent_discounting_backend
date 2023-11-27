@@ -121,47 +121,27 @@ def update_individual_user_activities(user_token, events_data, app_name):
 
     # Get all product ids for the user, excluding blank and null
     product_ids = list(set([event['product_id'] for event in user_events if event['product_id'] not in [None, '', 0]]))
-
+    logger.info("product_ids: " + str(product_ids))
     # Update visit and cart events
     if product_ids:
-        #try:
-        #    user_summary = UserSummary.objects.get(user_token=user_token, app_name=app_name)
-        #except UserSummary.DoesNotExist:
-        #    logger.info("Exception getting user summary object: " + user_token)
-        #    return
 
         for product_id in product_ids:
             visit_events = [event for event in user_events if event['product_id'] == product_id and event['event_type'] == 'page_load']
             item = Item.objects.filter(product_id=product_id).last()
-
+            # log visit events
+            logger.info("visit_events: " + str(visit_events))
             # Update each visit
             for event in visit_events:
                 visit = Visits(user=user, item=item, app_name=app_name, created_at=event['click_time'])
                 visit.save()
             
-                # update user_summary
-                # if product_id is in last_visited, remove it and append to the front else append to the front
-         #       if product_id in user_summary.last_visited:
-         #           user_summary.last_visited.remove(product_id)
-         #       user_summary.last_visited.insert(0, product_id)
-         #       user_summary.logged_time = event['click_time']
 
             cart_events = [event for event in user_events if event['product_id'] == product_id and event['click_text'] is not None and 'add to' in event['click_text'].lower()]
-
+            logger.info("cart_events: " + str(cart_events))
             # Update each cart
             for event in cart_events:
                 cart = Cart(user=user, item=item, app_name=app_name, created_at=event['click_time'])
                 cart.save()
-                # update user_summary
-         #       if product_id in user_summary.last_carted:
-         #           user_summary.last_carted.remove(product_id)
-         #       user_summary.last_carted.insert(0, product_id)
-         #       user_summary.logged_time = event['click_time']
-
-        # keep only the last 20 items in last_visited and last_carted
-        #user_summary.last_visited = user_summary.last_visited[:20]
-        #user_summary.last_carted = user_summary.last_carted[:20]
-        #user_summary.save()
 
     # Update identified user
     userid_events = [event for event in user_events if event['user_id'] not in [None, '', 0,'0']]
@@ -183,7 +163,7 @@ def update_individual_user_activities(user_token, events_data, app_name):
     connections.close_all()
 
 @shared_task
-def update_sessions(tokens,session_keys, event_ids, app_name,start_time):
+def update_sessions(session_keys, event_ids, app_name,start_time):
     logger.info("update_sessions start time: " + str(start_time))
     events = Event.objects.filter(id__in=event_ids)
     events_data = events.values('id', 'token', 'click_time', 'session', 'user_id', 'user_login', 'product_id', 'event_type', 'click_text','product_price','source_url')
@@ -196,6 +176,7 @@ def update_sessions(tokens,session_keys, event_ids, app_name,start_time):
 def update_individual_session(session_key,events_data, app_name):
     session_events = [event for event in events_data if event['session'] == session_key]
     user_token = session_events[0]['token']
+    logger.info("session_events: " + str(session_events))
     if not session_events:
         return
     # if session exists then update it else create it
@@ -329,12 +310,12 @@ def update_database_chunk(start_time, end_time, app_name):
         
         g1 = group(update_products.si(new_product_ids,event_ids,app_name,start_time),update_users.si(tokens,event_ids,app_name,start_time))
         # chain update_user_activities to g1
-        g2 = chain(g1,group(update_user_activities.si(tokens,event_ids,app_name,start_time),update_sessions.si(tokens,session_keys,event_ids,app_name,start_time)))
+        g2 = chain(g1,group(update_user_activities.si(tokens,event_ids,app_name,start_time),update_sessions.si(session_keys,event_ids,app_name,start_time)))
         g3 = chain(g2,update_all_user_sessions.si())
     else:
         # chain user and user_activities
         g1 = group(update_users.si(tokens,event_ids,app_name,start_time))
-        g2 = chain(g1,group(update_user_activities.si(tokens,event_ids,app_name,start_time),update_sessions.si(tokens,session_keys,event_ids,app_name,start_time)))
+        g2 = chain(g1,group(update_user_activities.si(tokens,event_ids,app_name,start_time),update_sessions.si(session_keys,event_ids,app_name,start_time)))
         g3 = chain(g2,update_all_user_sessions.si())
     
     g3()

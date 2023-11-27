@@ -6,5 +6,4 @@ urlpatterns = [
     path('visits/', VisitsView.as_view(), name='visit-list'),
     path('most_visited/', MostVisitedView.as_view(), name='most-visited'),
     path('most_carted/', MostCartedView.as_view(), name='most-carted-list'),
-    path('user_summary/', UserSummaryView.as_view(), name='user-summary'),
 ]

@@ -93,21 +93,6 @@ class MostCartedView(APIView):
         return Response(product_ids)
         
 
-class UserSummaryView(APIView):
-    def get(self,request):
-        token = self.request.query_params.get('token', None)
-        app_name = self.request.query_params.get('app_name', None)
-
-        if token is None or app_name is None: # respond with error
-            return Response({'error': 'token and app_name must be specified'})
-        try:
-            queryset = UserSummary.objects.get(user_token=token, app_name=app_name)
-        except:
-            return Response({'error': 'user summary not found'})
-
-        serializer = UserSummarySerializer(queryset)
-        return Response(serializer.data)
-
 
 
 
