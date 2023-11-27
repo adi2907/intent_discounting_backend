@@ -85,10 +85,6 @@ def update_individual_user(user_token, event_data, app_name):
             'last_visit': last_event['click_time'],
             'last_updated': last_event['click_time']
         })
-    # if user is created then create user_summary object
-    #if created:
-    #    user_summary = UserSummary(user_token=user_token, app_name =app_name, last_visited=[], last_carted=[], recommended=[], logged_time=last_event['click_time'])
-    #    user_summary.save()
 
     if not created:
         user.last_visit = last_event['click_time']

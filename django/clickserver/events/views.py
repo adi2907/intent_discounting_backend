@@ -16,7 +16,6 @@ IDLE_TIME = 60*1 # 1 minutes
 def events(request):
     
     if request.method == 'GET':
-#        logger.info("Got a get request")
         return HttpResponse("Hello, world. You're at the events index.")
     if request.method == 'POST':
         
@@ -28,10 +27,6 @@ def events(request):
         lastEventTimestamp = data.get('lastEventTimestamp')
         alme_user_token = data.get('alme_user_token')
         current_time = datetime.now()
-        logger.info("Last event timestamp: %s", lastEventTimestamp)
-        logger.info("Current time: %s", current_time)
-        if lastEventTimestamp:
-            logger.info("Time difference: %s", (current_time - datetime.fromtimestamp(int(lastEventTimestamp))).total_seconds())
         if lastEventTimestamp and (current_time - datetime.fromtimestamp(int(lastEventTimestamp))).total_seconds() > IDLE_TIME:
             session_id = uuid4().hex
             
