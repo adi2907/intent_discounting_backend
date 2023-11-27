@@ -260,7 +260,7 @@ def get_session_variables(session_events,app_name):
     purchase_count = 0
     for event in session_events:
         for action in purchase_actions:
-            if action.lower() in event['source_url'].lower():
+            if action.lower() in event['click_text'].lower():
                 purchase_count += 1
                 break
     

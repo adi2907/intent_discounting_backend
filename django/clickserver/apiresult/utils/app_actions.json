@@ -6,7 +6,7 @@
     },
     "almestore1.myshopify.com":{
         "add_to_cart": ["add to cart"],
-        "purchase": ["checkouts"],
-        "paid_traffic": ["'utm_","gclid"]
+        "purchase": ["check out","buy it now"],
+        "paid_traffic": ["utm_","gclid"]
     }
 }
