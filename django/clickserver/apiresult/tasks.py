@@ -106,6 +106,7 @@ def update_user_activities(tokens, event_ids, app_name,start_time):
 
 @shared_task
 def update_individual_user_activities(user_token, events_data, app_name):
+    cart_actions = app_actions[app_name]['add_to_cart']
     try:
         user = User.objects.get(token=user_token,app_name=app_name)
     except:
@@ -117,7 +118,6 @@ def update_individual_user_activities(user_token, events_data, app_name):
 
     # Get all product ids for the user, excluding blank and null
     product_ids = list(set([event['product_id'] for event in user_events if event['product_id'] not in [None, '', 0]]))
-    logger.info("product_ids: " + str(product_ids))
     # Update visit and cart events
     if product_ids:
 
@@ -131,10 +131,12 @@ def update_individual_user_activities(user_token, events_data, app_name):
                 visit = Visits(user=user, item=item, app_name=app_name, created_at=event['click_time'])
                 visit.save()
             
+            cart_events = []
 
-            cart_events = [event for event in user_events if event['product_id'] == product_id and event['click_text'] is not None and 'add to' in event['click_text'].lower()]
-            logger.info("cart_events: " + str(cart_events))
-            # Update each cart
+            for event in user_events:
+                if event['product_id'] == product_id and any(action_item in event['click_text'].lower() for action_item in cart_actions):
+                    cart_events.append(event)
+
             for event in cart_events:
                 cart = Cart(user=user, item=item, app_name=app_name, created_at=event['click_time'])
                 cart.save()
@@ -160,7 +162,6 @@ def update_individual_user_activities(user_token, events_data, app_name):
 
 @shared_task
 def update_sessions(session_keys, event_ids, app_name,start_time):
-    logger.info("update_sessions start time: " + str(start_time))
     events = Event.objects.filter(id__in=event_ids)
     events_data = events.values('id', 'token', 'click_time', 'session', 'user_id', 'user_login', 'product_id', 'event_type', 'click_text','product_price','source_url')
     with ThreadPoolExecutor() as executor:
@@ -172,7 +173,6 @@ def update_sessions(session_keys, event_ids, app_name,start_time):
 def update_individual_session(session_key,events_data, app_name):
     session_events = [event for event in events_data if event['session'] == session_key]
     user_token = session_events[0]['token']
-    logger.info("session_events: " + str(session_events))
     if not session_events:
         return
     # if session exists then update it else create it

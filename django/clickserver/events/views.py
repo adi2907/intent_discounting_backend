@@ -10,7 +10,7 @@ import logging
 logger = logging.getLogger(__name__)
 from uuid import uuid4
 
-IDLE_TIME = 60*1 # 1 minutes
+IDLE_TIME = 5*1 # 1 minutes
 # accept post requests from the xhttp request and save the data to the database
 @csrf_exempt
 def events(request):
