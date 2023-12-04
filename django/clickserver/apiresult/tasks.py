@@ -124,8 +124,7 @@ def update_individual_user_activities(user_token, events_data, app_name):
         for product_id in product_ids:
             visit_events = [event for event in user_events if event['product_id'] == product_id and event['event_type'] == 'page_load']
             item = Item.objects.filter(product_id=product_id).last()
-            # log visit events
-            logger.info("visit_events: " + str(visit_events))
+            
             # Update each visit
             for event in visit_events:
                 visit = Visits(user=user, item=item, app_name=app_name, created_at=event['click_time'])
