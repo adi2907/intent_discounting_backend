@@ -50,12 +50,11 @@ class SaleNotificationView(APIView):
     def get(self,request):
         token = self.request.query_params.get('token', None)
         app_name = self.request.query_params.get('app_name', None)
+        session_key = self.request.query_params.get('session_id', None)  
 
-        if token is None or app_name is None: # respond with error
-            return Response({'error': 'token and app_name must be specified'})
+        if token is None or app_name is None or session_key is None: # respond with error
+            return Response({'error': 'token, app_name, session_id must be specified'})
         
-        # get the django session key from Request object
-        session_key = self.request.session.session_key
         
         session = Sessions.objects.get(session_key=session_key,app_name=app_name)
         user = User.objects.get(token=token, app_name=app_name)
@@ -69,7 +68,7 @@ class SaleNotificationView(APIView):
                 session.pl_count >= PL_COUNT_THRESHOLD or \
                 session.session_duration >= SESSION_DURATION_THRESHOLD or \
                     session.total_products >= TOTAL_PRODUCTS_THRESHOLD:
-                return Response({'sale_notification': True}) 
+                return Response({'sale_notification': True})
    
     
 
