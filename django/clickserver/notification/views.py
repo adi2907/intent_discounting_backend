@@ -62,6 +62,12 @@ class SaleNotificationView(APIView):
         if user.purchase_last_4_sessions == 1:
             return Response({'sale_notification': False})
         else:
+            if session.events_count is None or \
+                session.page_load_count is None or \
+                session.session_duration is None or \
+                session.total_products_visited is None:
+                    return Response({'error': 'One or more session parameters are None'})
+
             if session.events_count >= TOTAL_COUNT_THRESHOLD or \
                 session.page_load_count >= PL_COUNT_THRESHOLD or \
                 session.session_duration >= SESSION_DURATION_THRESHOLD or \
