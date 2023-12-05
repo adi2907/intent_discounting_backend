@@ -64,7 +64,6 @@ class SaleNotificationView(APIView):
         else:
             if session.events_count is None or \
                 session.page_load_count is None or \
-                session.session_duration is None or \
                 session.total_products_visited is None:
                     return Response({'error': 'One or more session parameters are None'})
 
