@@ -58,7 +58,11 @@ class SaleNotificationView(APIView):
         
         session = Sessions.objects.get(session_key=session_key,app_name=app_name)
         user = User.objects.get(token=token, app_name=app_name)
-
+        # print user data
+        logger.info("User data")
+        for field in user._meta.fields:
+            logger.info(field.name, getattr(user, field.name))
+            
         if user.purchase_last_4_sessions == 1:
             return Response({'sale_notification': False})
         else:
