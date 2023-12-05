@@ -62,13 +62,13 @@ class SaleNotificationView(APIView):
         if user.purchase_last_4_sessions == 1:
             return Response({'sale_notification': False})
         else:
-            # return True if any of the threshold values TOTAL_COUNT_THRESHOLD, PL_COUNT_THRESHOLD, 
-            # SESSION_DURATION_THRESHOLD, TOTAL_PRODUCTS_THRESHOLD are met
+            logger.info("No purchase last 4 sessions")
             if session.events_count >= TOTAL_COUNT_THRESHOLD or \
                 session.page_load_count >= PL_COUNT_THRESHOLD or \
                 session.session_duration >= SESSION_DURATION_THRESHOLD or \
                     session.total_products_visited >= TOTAL_PRODUCTS_THRESHOLD:
                 return Response({'sale_notification': True})
+        return Response({'sale_notification': False})
    
     
 
