@@ -332,13 +332,18 @@ def update_all_user_sessions():
             previous_session = None
             if len(previous_4_sessions) >= 1:
                 previous_session = previous_4_sessions[0] #most recent session excluding the current session
-                
+            # print the session keys of the previous 4 sessions
+            logger.info("Previous 4 sessions for user: %s, app_name: %s", user.token, user.app_name)
+            for session in previous_4_sessions:
+                logger.info(session.session_key)
             purchase_history = [session.has_purchased for session in previous_4_sessions]
             user.purchase_last_4_sessions = 1 if sum(purchase_history) > 0 else 0
             user.carted_last_4_sessions = 1 if sum([session.has_carted for session in previous_4_sessions]) > 0 else 0
             
             # if previous session then assign purchase_prev_session to has_purchased of previous session else assign 0
             if previous_session:
+                logger.info("Previous session for user: %s, app_name: %s", user.token, user.app_name)
+                logger.info(previous_session.session_key)
                 user.purchase_prev_session = previous_session.has_purchased
 
             # number of sessions last 30 days
