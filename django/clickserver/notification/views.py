@@ -70,8 +70,7 @@ class SaleNotificationView(APIView):
 
             if session.events_count >= TOTAL_COUNT_THRESHOLD or \
                 session.page_load_count >= PL_COUNT_THRESHOLD or \
-                session.session_duration >= SESSION_DURATION_THRESHOLD or \
-                    session.total_products_visited >= TOTAL_PRODUCTS_THRESHOLD:
+                    session.total_products_visited >= TOTAL_PRODUCTS_THRESHOLD: #session.session_duration >= SESSION_DURATION_THRESHOLD or \
                 return Response({'sale_notification': True})
         return Response({'sale_notification': False})
    
