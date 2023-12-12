@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 ''' returns carts for user
-Usage: "almeapp.com/api/carts/?token=q6wxm4v47y9&max_items=5&app_name=test_shopify"
+Usage: "almeapp.com/api/crowd_favorites/?token=q6wxm4v47y9&max_items=5&app_name=almestore1.myshopify.com"
 '''
 class CartView(APIView):
     
@@ -31,7 +31,7 @@ class CartView(APIView):
         return Response(product_ids)
 
 ''' returns visits for user in descending order of number of visits
-Usage: "almeapp.com/api/visits/?token=q6wxm4v47y9&app_name=test_shopify&max_items=5"
+Usage: "almeapp.com/api/featured_collection/?token=q6wxm4v47y9&app_name=almestore1.myshopify.com"
 '''
 class VisitsView(APIView):
 
@@ -53,7 +53,7 @@ class VisitsView(APIView):
 
 '''
 Returns most visited items for the shop
-Usage: "almeapp.com/api/most_visited/?app_name=test_shopify"
+Usage: "almeapp.com/api/pick_up_where_you_left_off/?app_name=almestore1.myshopify.com"
 '''
 
 class MostVisitedView(APIView):
@@ -74,7 +74,7 @@ class MostVisitedView(APIView):
         return Response(product_ids)
 '''   
 Returns most carted items
-Usage: "almeapp.com/api/most_carted/?app_name=test_shopify"
+Usage: "almeapp.com/api/users_also_liked/?app_name=almestore1.myshopify.com"
 '''
 class MostCartedView(APIView):
     def get(self,request):
