@@ -63,6 +63,9 @@ def purchase(request):
         return HttpResponse("This is the purchase url. Please send a post request to this url.")
     if request.method == 'POST':
         data = json.loads(request.body)
+        # print all the data to the console
+        for key, value in data.items():
+            logger.info('{}: {}'.format(key, value))
         cart_token = data.get('cart_token')
         
         if not cart_token:
@@ -75,6 +78,9 @@ def purchase(request):
         app_name = data.get('app_name')
         # get click_time as this timestamp in ('%Y-%m-%d %H:%M:%S') format
         click_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        session_id = data.get('session_id')
+        if not session_id:
+            return JsonResponse({'success': False, 'message': 'Session id is empty'})
 
         # find the user
         try:
