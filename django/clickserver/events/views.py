@@ -83,7 +83,19 @@ def events(request):
 #       }'
 
 
-# Responses
+# Responses: 
+# Errors:
+# {'success': False, 'message': 'Cart token is empty'}
+# {'success': False, 'message': 'Cart token already exists'}
+# {'success': False, 'message': 'Session id is empty'}
+# {'success': False, 'message': 'User does not exist'}
+# {'success': False, 'message': 'Error processing request: <error message>'}
+
+# Success:
+# {'success': True, 'message': 'Purchase successful'}
+
+
+
 
 
 @csrf_exempt
