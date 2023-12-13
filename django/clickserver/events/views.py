@@ -57,15 +57,42 @@ def events(request):
         return JsonResponse({'session_id': session_id, 'success': True})
     
 @csrf_exempt
+# Example usage
+# curl -X POST \
+#   http://almeapp.com/events/purchase/ \
+#   -H 'Content-Type: application/json' \
+#   -d '{
+#         "cart_token": "carttoken123",
+#         "alme_user_token": "539311cienx",
+#         "app_name": "almestore1.myshopify.com",
+#         "session_id":"485d2ac7d7e4432eb576b614ea65f407",
+#         "products": [
+#             {
+#                 "product_id": "123",
+#                 "product_name": "Product A",
+#                 "product_price": 100,
+#                 "product_qty": 2
+#             },
+#             {
+#                 "product_id": "456",
+#                 "product_name": "Product B",
+#                 "product_price": 200,
+#                 "product_qty": 1
+#             }
+#         ]
+#       }'
+
+
+# Responses
+
+
+@csrf_exempt
 def purchase(request):
-    # don't allow get requests
     if request.method == 'GET':
         return HttpResponse("This is the purchase url. Please send a post request to this url.")
+
     if request.method == 'POST':
         data = json.loads(request.body)
-        # print all the data to the console
-        for key, value in data.items():
-            logger.info('{}: {}'.format(key, value))
         cart_token = data.get('cart_token')
         
         if not cart_token:
@@ -73,64 +100,66 @@ def purchase(request):
         
         if Purchase.objects.filter(cart_token=cart_token).exists():
             return JsonResponse({'success': False, 'message': 'Cart token already exists'})
-        
+
         alme_user_token = data.get('alme_user_token')  
         app_name = data.get('app_name')
-        # get click_time as this timestamp in ('%Y-%m-%d %H:%M:%S') format
-        click_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         session_id = data.get('session_id')
+
         if not session_id:
             return JsonResponse({'success': False, 'message': 'Session id is empty'})
 
-        # find the user
         try:
             user = User.objects.get(token=alme_user_token)
         except User.DoesNotExist:
             return JsonResponse({'success': False, 'message': 'User does not exist'})
-        # get product details as a list and iterate through the list
+
         products = data.get('products', [])
-        for product in products:
-            product_id = product.get('product_id')
-            product_name = product.get('product_name')
-            product_price = product.get('product_price')
-            product_qty = product.get('product_qty')
+        try:
+            for product in products:
+                item, _ = Item.objects.get_or_create(
+                    product_id=product.get('product_id'),
+                    defaults={
+                        'name': product.get('product_name'),
+                        'price': product.get('product_price')
+                    }
+                )
+                
+                event = Event(
+                    token=alme_user_token,
+                    session=session_id,
+                    user_login=data.get('user_login', ''),
+                    user_id=data.get('user_id', ''),
+                    click_time=datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                    user_regd=data.get('user_regd', ''),
+                    event_type='purchase',
+                    event_name='purchase',
+                    source_url='',
+                    app_name=app_name,
+                    click_text='',
+                    product_name=product.get('product_name'),
+                    product_id=product.get('product_id'),
+                    product_price=product.get('product_price'),
+                    logged_time=datetime.now()
+                )
+                event.save()
 
-            # get item 
-            item, created = Item.objects.get_or_create(product_id=product_id,
-                                defaults={'name': product.get('product_name'),
-                                'price': product.get('product_price')})
-            # create a new purchase event
-            event = Event()
-            event.token = alme_user_token
-            event.session = data.get('session_id')
-            event.user_login = data.get('user_login', '')
-            event.user_id = data.get('user_id', '')
-            click_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            event.click_time = click_time
-            event.user_regd = data.get('user_regd','')
-            event.event_type = 'purchase'
-            event.event_name = 'purchase'
+                purchase = Purchase(
+                    user=user,
+                    item=item,
+                    app_name=app_name,
+                    created_at=datetime.now(),
+                    cart_token=cart_token,
+                    quantity=product.get('product_qty'),
+                    logged_time=datetime.now()
+                )
+                purchase.save()
             
-            event.source_url = ''
-            event.app_name = app_name
-            event.click_text = ''
-            event.product_name = product_name
-            event.product_id = product_id
-            event.product_price = product_price
-            event.logged_time = datetime.now()
-            #save the event object to the database
-            event.save()
-            # create a new purchase object
-            purchase = Purchase()
-            purchase.user = user
-            purchase.item = item
-            purchase.app_name = app_name
-            purchase.created_at = click_time
-            purchase.cart_token = cart_token
-            purchase.quantity = product_qty
-            purchase.logged_time = datetime.now()
+            return JsonResponse({'success': True, 'message': 'Purchase successful'})
 
-            purchase.save()
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f'Error processing request: {str(e)}'})
+            
+        
 
 
             
