@@ -10,9 +10,6 @@ class Event(models.Model):
     click_time = models.DateTimeField(db_index=True)
     # allow null value for user_regd datetime field
     user_regd = models.TextField()
-    user_agent = models.TextField()
-    browser = models.TextField()
-    os = models.TextField()
     event_type = models.TextField()
     event_name = models.TextField()
     source_url = models.TextField()
@@ -22,9 +19,6 @@ class Event(models.Model):
     product_id = models.CharField(max_length=255,null=True,db_index=True)
     product_name = models.CharField(max_length=255, null=True,db_index=True)
     product_price = models.TextField(null=True)
-    # array of categories
-    product_category = models.TextField(null=True)
-    product_description = models.TextField(null=True)
     # add logged time, default is null
     logged_time = models.DateTimeField(null=True)
 

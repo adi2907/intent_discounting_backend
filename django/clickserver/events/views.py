@@ -10,6 +10,7 @@ import logging
 logger = logging.getLogger(__name__)
 from uuid import uuid4
 from apiresult.utils.config import *
+from apiresult.models import *
 
 
 # accept post requests from the xhttp request and save the data to the database
@@ -17,7 +18,7 @@ from apiresult.utils.config import *
 def events(request):
     
     if request.method == 'GET':
-        return HttpResponse("Hello, world. You're at the events index.")
+        return HttpResponse(" This is the events url. Please send a post request to this url")
     if request.method == 'POST':
         
         data = json.loads(request.body)
@@ -41,9 +42,6 @@ def events(request):
             # convert epoch time to datetime in 'yyyy-mm-dd hh:mm:ss' format
             event.click_time = datetime.fromtimestamp(item.get('click_time', 0)).strftime('%Y-%m-%d %H:%M:%S')
             event.user_regd = item.get('user_regd','')
-            event.user_agent = item.get('user_agent', '')
-            event.browser = item.get('browser', '')
-            event.os = item.get('os', '')
             event.event_type = item.get('event_type', '')
             event.event_name = item.get('event_name', '')
             event.source_url = item.get('source_url', '')
@@ -52,12 +50,84 @@ def events(request):
             event.product_name = item.get('product_name', '')
             event.product_id = item.get('product_id', '')
             event.product_price = item.get('product_price', '')
-            event.product_category = item.get('product_category', '')
-            event.product_created_date = item.get('product_created_date', '')
-            event.product_description = item.get('product_description', '')
             event.logged_time = datetime.now()
             #save the event object to the database
             event.save()
 
         return JsonResponse({'session_id': session_id, 'success': True})
     
+@csrf_exempt
+def purchase(request):
+    # don't allow get requests
+    if request.method == 'GET':
+        return HttpResponse("This is the purchase url. Please send a post request to this url.")
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        cart_token = data.get('cart_token')
+        
+        if not cart_token:
+            return JsonResponse({'success': False, 'message': 'Cart token is empty'})
+        
+        if Purchase.objects.filter(cart_token=cart_token).exists():
+            return JsonResponse({'success': False, 'message': 'Cart token already exists'})
+        
+        alme_user_token = data.get('alme_user_token')  
+        app_name = data.get('app_name')
+        # get click_time as this timestamp in ('%Y-%m-%d %H:%M:%S') format
+        click_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+        # find the user
+        try:
+            user = User.objects.get(token=alme_user_token)
+        except User.DoesNotExist:
+            return JsonResponse({'success': False, 'message': 'User does not exist'})
+        # get product details as a list and iterate through the list
+        products = data.get('products', [])
+        for product in products:
+            product_id = product.get('product_id')
+            product_name = product.get('product_name')
+            product_price = product.get('product_price')
+            product_qty = product.get('product_qty')
+
+            # get item 
+            item, created = Item.objects.get_or_create(product_id=product_id,
+                                defaults={'name': product.get('product_name'),
+                                'price': product.get('product_price')})
+            # create a new purchase event
+            event = Event()
+            event.token = alme_user_token
+            event.session = data.get('session_id')
+            event.user_login = data.get('user_login', '')
+            event.user_id = data.get('user_id', '')
+            click_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            event.click_time = click_time
+            event.user_regd = data.get('user_regd','')
+            event.event_type = 'purchase'
+            event.event_name = 'purchase'
+            
+            event.source_url = ''
+            event.app_name = app_name
+            event.click_text = ''
+            event.product_name = product_name
+            event.product_id = product_id
+            event.product_price = product_price
+            event.logged_time = datetime.now()
+            #save the event object to the database
+            event.save()
+            # create a new purchase object
+            purchase = Purchase()
+            purchase.user = user
+            purchase.item = item
+            purchase.app_name = app_name
+            purchase.created_at = click_time
+            purchase.cart_token = cart_token
+            purchase.quantity = product_qty
+            purchase.logged_time = datetime.now()
+
+            purchase.save()
+
+
+            
+            
+
+

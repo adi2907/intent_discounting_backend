@@ -7,4 +7,5 @@ from django.urls import path
 
 urlpatterns = [
     path('', views.events, name='events'),
+    path('purchase/', views.purchase, name='purchase'),
 ]

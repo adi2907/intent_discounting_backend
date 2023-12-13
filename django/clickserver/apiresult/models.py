@@ -38,6 +38,7 @@ class Purchase(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     item = models.ForeignKey(Item, on_delete=models.CASCADE)
     app_name = models.CharField(max_length=255,null=True,db_index=True)
+    cart_token = models.CharField(max_length=255,null=True,db_index=True)
     created_at = models.DateTimeField()
     quantity = models.PositiveIntegerField()
     logged_time = models.DateTimeField(auto_now_add=True,null=True)
