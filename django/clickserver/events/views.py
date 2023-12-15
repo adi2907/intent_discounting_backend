@@ -83,6 +83,8 @@ def events(request):
 #       }'
 
 
+
+
 # Responses: 
 # Errors:
 # {'success': False, 'message': 'Cart token is empty'}
@@ -101,7 +103,7 @@ def events(request):
 @csrf_exempt
 def purchase(request):
     if request.method == 'GET':
-        return HttpResponse("This is the purchase url. Please send a post request to this url.")
+        return JsonResponse({'success': False, 'message': 'This is the purchase url. Please send a post request to this url'})
 
     if request.method == 'POST':
         data = json.loads(request.body)
