@@ -3,16 +3,16 @@ from django.db import models
 # create event model
 class Event(models.Model):
     token = models.CharField(max_length=255,db_index=True)
-    session = models.TextField()
-    user_login = models.TextField()
-    user_id = models.TextField()
+    session = models.TextField(db_index=True)
+    user_login = models.TextField(null=True)
+    user_id = models.TextField(null=True)
     # click time is datetime field with format 'yyyy-mm-dd hh:mm:ss'
     click_time = models.DateTimeField(db_index=True)
     # allow null value for user_regd datetime field
-    user_regd = models.TextField()
+    user_regd = models.TextField(null=True)
     event_type = models.TextField()
-    event_name = models.TextField()
-    source_url = models.TextField()
+    event_name = models.TextField(null=True)
+    source_url = models.TextField(null=True)
     app_name = models.CharField(max_length=255,db_index=True)
     click_text = models.TextField(default='')
     # add product properties
