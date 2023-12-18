@@ -3,7 +3,7 @@ from django.db import models
 # create event model
 class Event(models.Model):
     token = models.CharField(max_length=255,db_index=True)
-    session = models.TextField(db_index=True)
+    session = models.TextField(max_length=255,db_index=True)
     user_login = models.TextField(null=True)
     user_id = models.TextField(null=True)
     # click time is datetime field with format 'yyyy-mm-dd hh:mm:ss'
