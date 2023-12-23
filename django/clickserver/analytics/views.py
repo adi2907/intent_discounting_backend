@@ -447,3 +447,73 @@ class ProductCartConversionView(APIView):
         sorted_conversion_data = sorted(conversion_data.items(), key=lambda x: x[1]['conversion_rate'], reverse=(order != 'asc'))
         return Response(sorted_conversion_data)
 
+'''
+API DOCUMENTATION FOR USER ACTIVITY SUMMARY API
+Endpoint: https://almeapp.com/analytics/user_activity_summary
+
+Parameters:
+- app_name (required, string): Name of the application.
+
+Example Request:
+https://almeapp.com/analytics/user_activity_summary?app_name=[YourAppName]
+
+Response Format:
+{
+  "registered_user_id_1": {
+    "name": string,
+    "phone": string,
+    "email": string,
+    "visited": number,
+    "added_to_cart": number,
+    "purchased": number
+  },
+  "registered_user_id_2": {
+    "name": string,
+    "phone": string,
+    "email": string,
+    "visited": number,
+    "added_to_cart": number,
+    "purchased": number
+  },
+  ...
+}
+
+Notes:
+- The response is a dictionary where each key is a registered user ID and the value is an object containing the user's name, phone, email, and counts for products visited, added to cart, and purchased.
+- This API provides detailed activity data for all identified users associated with the specified application, including personal information like name, phone, and email.
+- The activity data is aggregated based on user tokens linked to each identified user for the specific application.
+
+
+
+'''
+
+class IdentifiedUserActivityView(APIView):
+    def get(self, request, *args, **kwargs):
+        app_name = request.query_params.get('app_name', None)
+
+        if not app_name:
+            return Response({'error': 'App_name must exist'}, status=400)
+
+        user_activity_summary = {}
+
+        identified_users = IdentifiedUser.objects.filter(app_name=app_name)
+
+        for user in identified_users:
+            tokens = user.tokens
+            user_data = {
+                'name': user.name,
+                'phone': user.phone,
+                'email': user.email,
+                'visited': 0,
+                'added_to_cart': 0,
+                'purchased': 0
+            }
+
+            for token in tokens:
+                user_data['visited'] += Visits.objects.filter(user__token=token, app_name=app_name).count()
+                user_data['added_to_cart'] += Cart.objects.filter(user__token=token, app_name=app_name).count()
+                user_data['purchased'] += Purchase.objects.filter(user__token=token, app_name=app_name).count()
+
+            user_activity_summary[user.registered_user_id] = user_data
+
+        return Response(user_activity_summary)

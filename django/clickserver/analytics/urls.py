@@ -12,4 +12,5 @@ urlpatterns = [
     path('purchase_conversion/', PurchaseConversionView.as_view(), name='purchaseConversion'),
     path('product_visits/', ProductVisitsView.as_view(), name='productVisits'),
     path('product_cart_conversion/', ProductCartConversionView.as_view(), name='productCart'),
+    path('identified_user_activity/', IdentifiedUserActivityView.as_view(), name='identifiedUserActivity'),
 ]
