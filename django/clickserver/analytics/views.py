@@ -446,7 +446,6 @@ class ProductCartConversionView(APIView):
         
         sorted_conversion_data = sorted(conversion_data.items(), key=lambda x: x[1]['conversion_rate'], reverse=(order != 'asc'))
         return Response(sorted_conversion_data)
-
 '''
 API DOCUMENTATION FOR USER ACTIVITY SUMMARY API
 Endpoint: https://almeapp.com/analytics/identified_user_activity
@@ -458,16 +457,9 @@ Example Request:
 https://almeapp.com/analytics/identified_user_activity?app_name=[YourAppName]
 
 Response Format:
-{
-  "registered_user_id_1": {
-    "name": string,
-    "phone": string,
-    "email": string,
-    "visited": number,
-    "added_to_cart": number,
-    "purchased": number
-  },
-  "registered_user_id_2": {
+[
+  {
+    "serial_number": number,
     "name": string,
     "phone": string,
     "email": string,
@@ -476,16 +468,10 @@ Response Format:
     "purchased": number
   },
   ...
-}
-
-Notes:
-- The response is a dictionary where each key is a registered user ID and the value is an object containing the user's name, phone, email, and counts for products visited, added to cart, and purchased.
-- This API provides detailed activity data for all identified users associated with the specified application, including personal information like name, phone, and email.
-- The activity data is aggregated based on user tokens linked to each identified user for the specific application.
-
-
+]
 
 '''
+
 
 class IdentifiedUserActivityView(APIView):
     def get(self, request, *args, **kwargs):
@@ -494,13 +480,15 @@ class IdentifiedUserActivityView(APIView):
         if not app_name:
             return Response({'error': 'App_name must exist'}, status=400)
 
-        user_activity_summary = {}
+        user_activity_summary = []
+        serial_number = 1
 
         identified_users = IdentifiedUser.objects.filter(app_name=app_name)
 
         for user in identified_users:
             tokens = user.tokens
             user_data = {
+                'serial_number': serial_number,
                 'name': user.name,
                 'phone': user.phone,
                 'email': user.email,
@@ -514,6 +502,7 @@ class IdentifiedUserActivityView(APIView):
                 user_data['added_to_cart'] += Cart.objects.filter(user__token=token, app_name=app_name).count()
                 user_data['purchased'] += Purchase.objects.filter(user__token=token, app_name=app_name).count()
 
-            user_activity_summary[user.registered_user_id] = user_data
+            user_activity_summary.append(user_data)
+            serial_number += 1
 
         return Response(user_activity_summary)
