@@ -449,13 +449,13 @@ class ProductCartConversionView(APIView):
 
 '''
 API DOCUMENTATION FOR USER ACTIVITY SUMMARY API
-Endpoint: https://almeapp.com/analytics/user_activity_summary
+Endpoint: https://almeapp.com/analytics/identified_user_activity
 
 Parameters:
 - app_name (required, string): Name of the application.
 
 Example Request:
-https://almeapp.com/analytics/user_activity_summary?app_name=[YourAppName]
+https://almeapp.com/analytics/identified_user_activity?app_name=[YourAppName]
 
 Response Format:
 {
