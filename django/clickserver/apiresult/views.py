@@ -28,6 +28,14 @@ class CartView(APIView):
         queryset = Cart.objects.filter(user__token=token, app_name=app_name, created_at__gte=timezone.now() - timezone.timedelta(days=7))
         queryset = queryset.values('item__product_id').annotate(count=Count('item__product_id')).order_by('-count')[:int(max_items)]
         product_ids = [Item.objects.get(product_id=item['item__product_id']).product_id for item in queryset]
+
+        # if not enough items, get most carted items for the shop
+        if len(product_ids) < int(max_items):
+            queryset = Cart.objects.filter(app_name=app_name, created_at__gte=timezone.now() - timezone.timedelta(days=7))
+            queryset = queryset.values('item__product_id').annotate(count=Count('item__product_id')).order_by('-count')[:int(max_items)]
+            product_ids = [Item.objects.get(product_id=item['item__product_id']).product_id for item in queryset]
+            product_ids = random.sample(product_ids, min(len(product_ids), 10))
+
         return Response(product_ids)
 
 ''' returns visits for user in descending order of number of visits
@@ -47,6 +55,13 @@ class VisitsView(APIView):
         # Annotate visit count and order by descending count
         queryset = queryset.values('item__product_id').annotate(visit_count=Count('item__product_id')).order_by('-visit_count')[:int(max_items)]
         product_ids = [Item.objects.get(product_id=item['item__product_id']).product_id for item in queryset]
+
+        # if not enough items, get most visited items for the shop
+        if len(product_ids) < int(max_items):
+            queryset = Visits.objects.filter(app_name=app_name, created_at__gte=timezone.now() - timezone.timedelta(days=7))
+            queryset = queryset.values('item__product_id').annotate(visit_count=Count('item__product_id')).order_by('-visit_count')[:int(max_items)]
+            product_ids = [Item.objects.get(product_id=item['item__product_id']).product_id for item in queryset]
+            product_ids = random.sample(product_ids, min(len(product_ids), 10))
         return Response(product_ids)
  
 

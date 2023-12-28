@@ -328,14 +328,14 @@ Endpoint: https://almeapp.com/analytics/product_visits
 Parameters:
 - start_date (optional, string): Start date for filtering visits in YYYY-MM-DD HH:MM:SS format. Defaults to the beginning of the previous day.
 - end_date (optional, string): End date for filtering visits in YYYY-MM-DD HH:MM:SS format. Defaults to the end of the previous day.
-- app_name (optional, string): Application name for filtering visits.
+- app_name: Application name for filtering visits.
 - order (optional, string): Sort order for visit counts, either 'asc' for ascending or 'desc' for descending. Default is 'desc'.
 
 Example Request:
-https://almeapp.com/analytics/product_visits?app_name=[YourAppName]&token=[YourToken]&start_date=YYYY-MM-DD 00:00:00&end_date=YYYY-MM-DD 23:59:59&order=desc
+https://almeapp.com/analytics/product_visits?app_name=[YourAppName]&start_date=YYYY-MM-DD 00:00:00&end_date=YYYY-MM-DD 23:59:59&order=desc
 
 Example Request for Default Date Range (Previous Day):
-https://almeapp.com/analytics/product_visits?app_name=[YourAppName]&token=[YourToken]
+https://almeapp.com/analytics/product_visits?app_name=[YourAppName]
 
 Response Format:
 [
@@ -356,12 +356,16 @@ Notes:
 class ProductVisitsView(APIView):
 
     def get(self, request, *args, **kwargs):
+
         previous_day = datetime.now().date() - timedelta(days=1)
 
         # Get start_date and end_date from request, or set defaults
         start_date_str = request.query_params.get('start_date')
         end_date_str = request.query_params.get('end_date')
         app_name = request.query_params.get('app_name', None)
+
+        if not app_name:
+            return Response({'error': 'App_name must exist'}, status=400)
         order = request.query_params.get('order', 'desc')
 
         start_date = datetime.combine(previous_day, time.min)
