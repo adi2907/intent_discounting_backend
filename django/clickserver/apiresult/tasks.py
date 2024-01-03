@@ -105,7 +105,7 @@ def update_user_activities(tokens, event_ids, app_name,start_time):
 
 @shared_task
 def update_individual_user_activities(user_token, events_data, app_name):
-    cart_actions = app_actions[app_name]['add_to_cart']
+    cart_actions = app_actions.get(app_name, app_actions["default"])["add_to_cart"]
     try:
         user = User.objects.get(token=user_token,app_name=app_name)
     except:
@@ -213,9 +213,9 @@ def update_individual_session(session_key,events_data, app_name):
 
 def get_session_variables(session_events,app_name):
 
-    cart_actions = app_actions[app_name]['add_to_cart']
-    purchase_actions = app_actions[app_name]['purchase']
-    paid_traffic_strings = app_actions[app_name]['paid_traffic']
+    cart_actions = app_actions.get(app_name, app_actions["default"])["add_to_cart"]
+    purchase_actions = app_actions.get(app_name, app_actions["default"])['purchase']
+    paid_traffic_strings = app_actions.get(app_name, app_actions["default"])['paid_traffic']
     
     # update session
     session_start = min(session_events, key=lambda e: e['click_time'])['click_time']

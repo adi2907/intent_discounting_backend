@@ -14,7 +14,7 @@
         "purchase": ["check out","buy it now"],
         "paid_traffic": ["utm_","gclid"]
     },
-    "quickstart-c8d917d2.myshopify.com":{
+    "default":{
         "add_to_cart": ["add to cart"],
         "purchase": ["check out","buy it now"],
         "paid_traffic": ["utm_","gclid"]
