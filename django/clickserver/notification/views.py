@@ -56,8 +56,15 @@ class SaleNotificationView(APIView):
             return Response({'error': 'token, app_name, session_id must be specified'})
         
         
-        session = Sessions.objects.get(session_key=session_key,app_name=app_name)
-        user = User.objects.get(token=token, app_name=app_name)
+        try:
+            session = Sessions.objects.get(session_key=session_key,app_name=app_name)
+        except:
+            return Response({'error': 'session not found'})
+
+        try:
+            user = User.objects.get(token=token, app_name=app_name)
+        except:
+            return Response({'error': 'user not found'})
 
         if user.purchase_last_4_sessions == 1:
             return Response({'sale_notification': False})
