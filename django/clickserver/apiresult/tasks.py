@@ -24,7 +24,7 @@ def update_products(new_product_ids, event_ids, app_name,start_time):
     events = Event.objects.filter(id__in=event_ids)
 
     # Create a list of dictionaries containing necessary information for each event
-    event_data = events.values('id', 'product_id', 'click_time', 'product_name', 'product_price', 'product_category')
+    event_data = events.values('id', 'product_id', 'click_time', 'product_name', 'product_price')
 
     with ThreadPoolExecutor() as executor:
         product_tasks = [
@@ -51,7 +51,6 @@ def update_individual_product(product_id, event_data, app_name):
     if price == '':
         price = 0
     item.price = price
-    item.categories = event['product_category']
     item.app_name = app_name
     item.last_updated = event['click_time']
     item.save()
@@ -359,7 +358,7 @@ def update_all_user_sessions():
 
 @shared_task
 def update_database():    
-    time_chunk = 2
+    time_chunk = 60
     start_time = datetime.now() - timedelta(seconds=time_chunk)
     end_time = datetime.now()
     # start_time = datetime(2023, 1, 1, 0, 0, 0)
