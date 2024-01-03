@@ -144,7 +144,7 @@ def update_individual_user_activities(user_token, events_data, app_name):
     
     if userid_events:
         user.registered_user_id = userid_events[0]['user_id']
-        user.user_login = userid_events[0]['user_login']
+        user.user_login = userid_events[0].get('user_login', None)
         user.save()
 
         if IdentifiedUser.objects.filter(registered_user_id=user.registered_user_id).filter(app_name=app_name).exists():
