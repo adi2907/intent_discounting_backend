@@ -450,15 +450,28 @@ class ProductCartConversionView(APIView):
         
         sorted_conversion_data = sorted(conversion_data.items(), key=lambda x: x[1]['conversion_rate'], reverse=(order != 'asc'))
         return Response(sorted_conversion_data)
+    
 '''
 API DOCUMENTATION FOR USER ACTIVITY SUMMARY API
 Endpoint: https://almeapp.com/analytics/identified_user_activity
 
 Parameters:
 - app_name (required, string): Name of the application.
+- days (optional, integer): Number of days to look back from the current date for user activity. Defaults to the previous day if not specified.
+- start_date (optional, string): Start date of the range in YYYY-MM-DD format.
+- end_date (optional, string): End date of the range in YYYY-MM-DD format.
 
-Example Request:
-https://almeapp.com/analytics/identified_user_activity?app_name=[YourAppName]
+Note: If both 'days' and 'start_date'/'end_date' are provided, 'days' will be ignored.
+
+Usage Examples:
+1. Default Use Case (Previous Day)
+   GET https://almeapp.com/analytics/identified_user_activity?app_name=[YourAppName]
+
+2. Specific Number of Previous Days
+   GET https://almeapp.com/analytics/identified_user_activity?app_name=[YourAppName]&days=<number_of_days>
+
+3. Specific Date Range
+   GET https://almeapp.com/analytics/identified_user_activity?app_name=[YourAppName]&start_date=<YYYY-MM-DD>&end_date=<YYYY-MM-DD>
 
 Response Format:
 [
@@ -467,27 +480,30 @@ Response Format:
     "name": string,
     "phone": string,
     "email": string,
+    "last_visited": datetime,
     "visited": number,
     "added_to_cart": number,
     "purchased": number
   },
   ...
 ]
-
 '''
 
 
 class IdentifiedUserActivityView(APIView):
-    def get(self, request, *args, **kwargs):
+    def get(self, request):
         app_name = request.query_params.get('app_name', None)
 
         if not app_name:
             return Response({'error': 'App_name must exist'}, status=400)
-
+        
+        start_of_day, end_of_day = get_date_range_from_request(request)
         user_activity_summary = []
         serial_number = 1
 
-        identified_users = IdentifiedUser.objects.filter(app_name=app_name)
+        identified_users = IdentifiedUser.objects.filter(app_name=app_name,
+            logged_time__gte=start_of_day, 
+            logged_time__lte=end_of_day)
 
         for user in identified_users:
             tokens = user.tokens
@@ -496,9 +512,11 @@ class IdentifiedUserActivityView(APIView):
                 'name': user.name,
                 'phone': user.phone,
                 'email': user.email,
+                'last_visited': user.logged_time,
                 'visited': 0,
                 'added_to_cart': 0,
                 'purchased': 0
+
             }
 
             for token in tokens:
@@ -510,3 +528,5 @@ class IdentifiedUserActivityView(APIView):
             serial_number += 1
 
         return Response(user_activity_summary)
+
+
