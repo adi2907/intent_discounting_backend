@@ -174,9 +174,6 @@ def purchase(request):
             return JsonResponse({'success': False, 'message': f'Error processing request: {str(e)}'})
             
         
-
-
-            
             
 
 

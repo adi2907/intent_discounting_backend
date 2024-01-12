@@ -234,10 +234,8 @@ def get_session_variables(session_events,app_name):
     # add events where any of purchase_actions is a substring of source_url
     purchase_count = 0
     for event in session_events:
-        for action in purchase_actions:
-            if action.lower() in event['click_text'].lower():
-                purchase_count += 1
-                break
+        if event['event_type'] == 'purchase':
+            purchase_count += 1
     
     # add events where any of cart_actions exactly matches click_text
     cart_count = 0
