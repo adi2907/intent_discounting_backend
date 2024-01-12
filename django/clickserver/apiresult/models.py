@@ -58,7 +58,7 @@ class Cart(models.Model):
     app_name = models.CharField(max_length=255,null=True,db_index=True)
     created_at = models.DateTimeField(db_index=True)
     logged_time = models.DateTimeField(auto_now_add=True,null=True)
-    quantity = models.PositiveIntegerField()
+    quantity = models.PositiveIntegerField(null=True,default=1)
     cart_token = models.CharField(max_length=255,null=True,db_index=True)
     
     
