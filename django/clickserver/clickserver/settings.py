@@ -27,7 +27,7 @@ DEBUG = False
 
 ALLOWED_HOSTS = ['*']
 #ALLOWED_HOSTS =['3.6.225.178','almeapp.com','127.0.0.1','localhost']
-CORS_ORIGIN_ALLOW_ALL = False
+CORS_ORIGIN_ALLOW_ALL = True
 SECURE_SSL_REDIRECT = True
 
 # Application definition
@@ -58,9 +58,6 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-]
-CORS_ALLOWED_ORIGIN_REGEXES = [
-    r"^https://.*\.myshopify\.com$",
 ]
 
 ROOT_URLCONF = 'clickserver.urls'

@@ -56,11 +56,12 @@ def events(request):
 
         return JsonResponse({'session_id': session_id, 'success': True})
     
-@csrf_exempt
+
 # Example usage
 # curl -X POST \
-#   http://almeapp.com/events/purchase/ \
+#   https://almeapp.com/events/purchase/ \
 #   -H 'Content-Type: application/json' \
+#   -H 'Origin: https://www.almeapp.co.in' \
 #   -d '{
 #         "cart_token": "carttoken123",
 #         "alme_user_token": "539311cienx",
@@ -95,8 +96,6 @@ def events(request):
 
 # Success:
 # {'success': True, 'message': 'Purchase successful'}
-
-
 
 
 
@@ -173,7 +172,121 @@ def purchase(request):
         except Exception as e:
             return JsonResponse({'success': False, 'message': f'Error processing request: {str(e)}'})
             
+
+# Example usage
+# curl -X POST \
+#   https://almeapp.com/events/add_cart/ \
+#   -H 'Content-Type: application/json' \
+#   -H 'Origin: https://www.almeapp.co.in' \
+#   -d '{
+#         "cart_token": "carttoken123",
+#         "alme_user_token": "539311cienx",
+#         "app_name": "almestore1.myshopify.com",
+#         "session_id":"485d2ac7d7e4432eb576b614ea65f407",
+#         "products": [
+#             {
+#                 "product_id": "123",
+#                 "product_name": "Product A",
+#                 "product_price": 100,
+#                 "product_qty": 2
+#             },
+#             {
+#                 "product_id": "456",
+#                 "product_name": "Product B",
+#                 "product_price": 200,
+#                 "product_qty": 1
+#             }
+#         ]
+#       }'
+
+
+
+
+# Responses: 
+# Errors:
+# {'success': False, 'message': 'Cart token is empty'}
+# {'success': False, 'message': 'Cart token already exists'}
+# {'success': False, 'message': 'Session id is empty'}
+# {'success': False, 'message': 'User does not exist'}
+# {'success': False, 'message': 'Error processing request: <error message>'}
+
+# Success:
+# {'success': True, 'message': 'Add to cart successful'}
+
+
+
+
+@csrf_exempt
+def add_cart(request):
+    if request.method == 'GET':
+        return JsonResponse({'success': False, 'message': 'This is the add cart url. Please send a post request to this url'})
+
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        cart_token = data.get('cart_token')
         
+        if not cart_token:
+            return JsonResponse({'success': False, 'message': 'Cart token is empty'})
+        
+        if Cart.objects.filter(cart_token=cart_token).exists():
+            return JsonResponse({'success': False, 'message': 'Cart token already exists'})
+
+        alme_user_token = data.get('alme_user_token')  
+        app_name = data.get('app_name')
+        session_id = data.get('session_id')
+
+        if not session_id:
+            return JsonResponse({'success': False, 'message': 'Session id is empty'})
+
+        try:
+            user = User.objects.get(token=alme_user_token)
+        except User.DoesNotExist:
+            return JsonResponse({'success': False, 'message': 'User does not exist'})
+
+        products = data.get('products', [])
+        try:
+            for product in products:
+                item, _ = Item.objects.get_or_create(
+                    product_id=product.get('product_id'),
+                    defaults={
+                        'name': product.get('product_name'),
+                        'price': product.get('product_price')
+                    }
+                )
+                
+                event = Event(
+                    token=alme_user_token,
+                    session=session_id,
+                    user_login=data.get('user_login', ''),
+                    user_id=data.get('user_id', ''),
+                    click_time=datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                    user_regd=data.get('user_regd', ''),
+                    event_type='add_cart',
+                    event_name='add_cart',
+                    source_url='',
+                    app_name=app_name,
+                    click_text='',
+                    product_name=product.get('product_name'),
+                    product_id=product.get('product_id'),
+                    product_price=product.get('product_price'),
+                    logged_time=datetime.now()
+                )
+                event.save()
+
+                cart = Cart(
+                    user=user,
+                    item=item,
+                    app_name=app_name,
+                    created_at=datetime.now(),
+                    cart_token=cart_token,
+                    quantity=product.get('product_qty'),
+                    logged_time=datetime.now()
+                )
+                purchase.save()
             
+            return JsonResponse({'success': True, 'message': 'Add to cart successful'})
+
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f'Error processing request: {str(e)}'})  
 
 
