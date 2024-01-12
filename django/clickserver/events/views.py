@@ -282,7 +282,7 @@ def add_cart(request):
                     quantity=product.get('product_qty'),
                     logged_time=datetime.now()
                 )
-                purchase.save()
+                cart.save()
             
             return JsonResponse({'success': True, 'message': 'Add to cart successful'})
 
