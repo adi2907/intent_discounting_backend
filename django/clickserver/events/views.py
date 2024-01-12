@@ -129,13 +129,19 @@ def purchase(request):
         products = data.get('products', [])
         try:
             for product in products:
-                item, _ = Item.objects.get_or_create(
-                    product_id=product.get('product_id'),
-                    defaults={
-                        'name': product.get('product_name'),
-                        'price': product.get('product_price')
-                    }
-                )
+                product_id = product.get('product_id')
+                item = Item.objects.filter(
+                product_id=product_id,
+                app_name=app_name
+                ).first()
+
+                if not item:
+                    item = Item.objects.create(
+                        product_id=product_id,
+                        app_name=app_name,
+                        name=product.get('product_name'),
+                        price=product.get('product_price')
+                    )
                 
                 event = Event(
                     token=alme_user_token,
@@ -246,13 +252,19 @@ def add_cart(request):
         products = data.get('products', [])
         try:
             for product in products:
-                item, _ = Item.objects.get_or_create(
-                    product_id=product.get('product_id'),
-                    defaults={
-                        'name': product.get('product_name'),
-                        'price': product.get('product_price')
-                    }
-                )
+                product_id = product.get('product_id')
+                item = Item.objects.filter(
+                product_id=product_id,
+                app_name=app_name
+                ).first()
+
+                if not item:
+                    item = Item.objects.create(
+                        product_id=product_id,
+                        app_name=app_name,
+                        name=product.get('product_name'),
+                        price=product.get('product_price')
+                    )
                 
                 event = Event(
                     token=alme_user_token,
