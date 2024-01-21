@@ -214,6 +214,7 @@ def update_individual_session(session_key,events_data, app_name):
 def get_session_variables(session_events,app_name):
 
     cart_actions = app_actions.get(app_name, app_actions["default"])["add_to_cart"]
+    purchase_actions = app_actions.get(app_name, app_actions["default"])["purchase"]
     paid_traffic_strings = app_actions.get(app_name, app_actions["default"])['paid_traffic']
     
     # update session
@@ -232,8 +233,11 @@ def get_session_variables(session_events,app_name):
 
     purchase_count = 0
     for event in session_events:
-        if event['event_type'] == 'purchase':
-            purchase_count += 1
+        if event['click_text']:
+            for action in purchase_actions:
+                if action in event['click_text'].lower():
+                    purchase_count += 1
+                    break
     
     # add events where any of cart_actions exactly matches click_text
     cart_count = 0

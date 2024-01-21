@@ -9,4 +9,5 @@ urlpatterns = [
     path('', views.events, name='events'),
     path('purchase/', views.purchase, name='purchase'),
     path('add_cart/', views.add_cart, name='add_cart'),
+    path('shopify_webhook_purchase/', views.purchase_webhook, name='shopify_purchase_webhook'),
 ]

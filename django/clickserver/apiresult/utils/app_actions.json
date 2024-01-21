@@ -1,18 +1,12 @@
 {
     "desi_sandook":{
         "add_to_cart": ["add to cart"],
+        "purchase": ["buy it now","check out"],
         "paid_traffic": ["'utm_","gclid"]
-    },
-    "almestore1.myshopify.com":{
-        "add_to_cart": ["add to cart"],
-        "paid_traffic": ["utm_","gclid"]
-    },
-    "almetest1.myshopify.com":{
-        "add_to_cart": ["add to cart"],
-        "paid_traffic": ["utm_","gclid"]
     },
     "default":{
         "add_to_cart": ["add to cart"],
+        "purchase": ["buy it now","check out"],
         "paid_traffic": ["utm_","gclid"]
     }
 }

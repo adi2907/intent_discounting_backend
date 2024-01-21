@@ -5,6 +5,7 @@ from django.shortcuts import render
 from .models import Event
 from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
+from django.utils.dateparse import parse_datetime
 import json
 import logging
 logger = logging.getLogger(__name__)
@@ -59,6 +60,103 @@ def events(request):
 
 # Example usage
 # curl -X POST \
+#   https://almeapp.com/events/shopify_webhook_purchase \
+#   -H 'Content-Type: application/json' \
+#   -H 'Origin: https://www.almeapp.co.in' \
+#   -d '{
+#         "cart_token": "carttoken123",
+#         "email": "user@example.com",
+#         "user_id": "12345",
+#         "created_at": "2024-01-20T12:00:00-05:00",
+#         "line_items": [
+#             {
+#                 "product_id": "123",
+#                 "title": "Product A",
+#                 "price": "100",
+#                 "quantity": 2
+#             },
+#             {
+#                 "product_id": "456",
+#                 "title": "Product B",
+#                 "price": "200",
+#                 "quantity": 1
+#             }
+#         ],
+#         "total_discounts": "50.00",
+#         "discount_codes": [
+#             {
+#                 "code": "DISCOUNT10",
+#                 "amount": "10.00"
+#             }
+#         ]
+#       }'
+
+# Responses:
+# Success: HTTP 200 OK
+# Errors:
+# HTTP 500 Internal Server Error: Error processing request.
+# HTTP 405 Method Not Allowed: Invalid request method.
+
+# Note: This endpoint is intended to be called by Shopify with the appropriate data format.
+# The data should match the format of a Shopify order webhook payload.
+
+
+
+@csrf_exempt
+def shopify_webhook_purchase(request):
+    if request.method == 'GET':
+        return HttpResponse("This is the shopify webhook purchase url. Please send a post request to this url")
+    elif request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+
+            cart_token = data.get('cart_token')
+            user_login = data.get('email')
+            user_id = data.get('user_id')
+            created_at = parse_datetime(data.get('created_at'))
+            if created_at:
+                created_at += timedelta(hours=5, minutes=30)  # Convert to IST
+            app_name = request.META.get('HTTP_X_SHOPIFY_SHOP_DOMAIN', 'Unknown Store')
+
+            total_discount = float(data.get('total_discounts', '0.0'))
+            total_line_items_price = sum(float(item['price']) * item['quantity'] for item in data.get('line_items', []))
+            discount_codes = [{'code': code['code'], 'amount': code['amount']} for code in data.get('discount_codes', [])]
+
+            for line_item in data.get('line_items', []):
+                line_item_price_per_item = float(line_item['price'])
+                line_item_quantity = line_item['quantity']
+                line_item_total_price = line_item_price_per_item * line_item_quantity
+                line_item_discount = (line_item_total_price / total_line_items_price) * total_discount if total_line_items_price > 0 else 0
+
+                purchase = Purchase(
+                    cart_token=cart_token,
+                    user_login=user_login,
+                    user_id=user_id,
+                    created_at=created_at,
+                    app_name=app_name,
+                    product_id=str(line_item.get('product_id')),
+                    product_name=line_item.get('title'),
+                    product_price=str(line_item_price_per_item),
+                    product_quantity=str(line_item_quantity),
+                    discount_codes=json.dumps(discount_codes),
+                    discount_amount=str(line_item_discount),
+                    logged_time=None  # Set this as needed
+                )
+                purchase.save()
+
+            return HttpResponse(status=200)
+        except Exception as e:
+            logger.error(f'Error processing webhook purchase request: {str(e)}')
+            return HttpResponse(status=500)
+    else:
+        return HttpResponse(status=405)
+
+
+
+
+
+# Example usage
+# curl -X POST \
 #   https://almeapp.com/events/purchase/ \
 #   -H 'Content-Type: application/json' \
 #   -H 'Origin: https://www.almeapp.co.in' \
@@ -82,7 +180,6 @@ def events(request):
 #             }
 #         ]
 #       }'
-
 
 
 
