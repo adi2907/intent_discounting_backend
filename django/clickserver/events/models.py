@@ -38,6 +38,7 @@ class ShopifyPurchase(models.Model):
     product_name = models.CharField(max_length=255, null=True,db_index=True)
     product_price = models.TextField(null=True)
     product_quantity = models.TextField(null=True)
+    discount_amount = models.TextField(null=True)
     # array of discount codes
     discount_codes = models.JSONField(null=True)
     # add logged time, default is null
