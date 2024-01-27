@@ -123,14 +123,12 @@ def shopify_webhook_purchase(request):
             app_name = request.META.get('HTTP_X_SHOPIFY_SHOP_DOMAIN', 'Unknown Store')
 
             total_discount = float(data.get('total_discounts', '0.0'))
-            # if line items are present, calculate discount per item
-            if data.get('line_items', []):
-                total_line_items_price = sum(float(item['price']) * item['quantity'] for item in data.get('line_items', []))
-            # if discount codes are present, calculate discount per item
-            if data.get('discount_codes', []):
-                discount_codes = [{'code': code['code'], 'amount': code['amount']} for code in data.get('discount_codes', [])]
-            # print line items
-            logger.info(f"Webhook purchase request line items: {data.get('line_items', [])}")
+            # if line items are not present, return error response
+            if not data.get('line_items', []):
+                return JsonResponse({'error': 'line_items must be present'}, status=400)
+            total_line_items_price = sum(float(item['price']) * item['quantity'] for item in line_items)
+            discount_codes = data.get('discount_codes', [])
+            discount_codes_processed = [{'code': code['code'], 'amount': code['amount']} for code in discount_codes]
             for line_item in data.get('line_items', []):
                 line_item_price_per_item = float(line_item['price'])
                 line_item_quantity = line_item['quantity']
@@ -147,7 +145,7 @@ def shopify_webhook_purchase(request):
                     product_name=line_item.get('title'),
                     product_price=str(line_item_price_per_item),
                     product_quantity=str(line_item_quantity),
-                    discount_codes=json.dumps(discount_codes),
+                    discount_codes=json.dumps(discount_codes_processed),
                     discount_amount=str(line_item_discount),
                     logged_time=None  # Set this as needed
                 )
