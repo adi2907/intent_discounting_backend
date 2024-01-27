@@ -59,7 +59,7 @@ def events(request):
         return JsonResponse({'session_id': session_id, 'success': True})
     
 
-# Example usage
+#Example usage
 # curl -X POST \
 #   https://almeapp.com/events/shopify_webhook_purchase \
 #   -H 'Content-Type: application/json' \
@@ -109,9 +109,8 @@ def shopify_webhook_purchase(request):
         return HttpResponse("This is the shopify webhook purchase url. Please send a post request to this url")
     elif request.method == 'POST':
         try:
-            logger.info("Processing webhook purchase request")
             data = json.loads(request.body)
-
+            logger.info(f"Webhook purchase request data: {data}")
             cart_token = data.get('cart_token')
             user_login = data.get('email')
             user_id = data.get('user_id')
@@ -124,9 +123,14 @@ def shopify_webhook_purchase(request):
             app_name = request.META.get('HTTP_X_SHOPIFY_SHOP_DOMAIN', 'Unknown Store')
 
             total_discount = float(data.get('total_discounts', '0.0'))
-            total_line_items_price = sum(float(item['price']) * item['quantity'] for item in data.get('line_items', []))
-            discount_codes = [{'code': code['code'], 'amount': code['amount']} for code in data.get('discount_codes', [])]
-
+            # if line items are present, calculate discount per item
+            if data.get('line_items', []):
+                total_line_items_price = sum(float(item['price']) * item['quantity'] for item in data.get('line_items', []))
+            # if discount codes are present, calculate discount per item
+            if data.get('discount_codes', []):
+                discount_codes = [{'code': code['code'], 'amount': code['amount']} for code in data.get('discount_codes', [])]
+            # print line items
+            logger.info(f"Webhook purchase request line items: {data.get('line_items', [])}")
             for line_item in data.get('line_items', []):
                 line_item_price_per_item = float(line_item['price'])
                 line_item_quantity = line_item['quantity']
