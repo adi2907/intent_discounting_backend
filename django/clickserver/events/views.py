@@ -1,3 +1,4 @@
+import re
 from django.shortcuts import render
 from datetime import datetime, timedelta
 from django.http import HttpResponse,JsonResponse
@@ -108,12 +109,16 @@ def shopify_webhook_purchase(request):
         return HttpResponse("This is the shopify webhook purchase url. Please send a post request to this url")
     elif request.method == 'POST':
         try:
+            logger.info("Processing webhook purchase request")
             data = json.loads(request.body)
 
             cart_token = data.get('cart_token')
             user_login = data.get('email')
             user_id = data.get('user_id')
-            created_at = parse_datetime(data.get('created_at'))
+            created_at_str = data.get('created_at')
+            if not isinstance(created_at_str, str) or not re.match(r'\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}', created_at_str):
+                return JsonResponse({'error': 'created_at must be a string in ISO format'}, status=400)
+            created_at = parse_datetime(created_at_str)
             if created_at:
                 created_at += timedelta(hours=5, minutes=30)  # Convert to IST
             app_name = request.META.get('HTTP_X_SHOPIFY_SHOP_DOMAIN', 'Unknown Store')
