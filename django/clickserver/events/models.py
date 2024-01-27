@@ -26,7 +26,7 @@ class Event(models.Model):
         db_table = 'event_raw'
 
 # create purchase model
-class Purchase(models.Model):
+class ShopifyPurchase(models.Model):
     cart_token = models.CharField(max_length=255,db_index=True)
     user_login = models.TextField(null=True)
     user_id = models.TextField(null=True)
@@ -44,4 +44,4 @@ class Purchase(models.Model):
     logged_time = models.DateTimeField(null=True)
 
     class Meta:
-        db_table = 'purchase_webhook'
+        db_table = 'shopify_purchase'

@@ -3,7 +3,7 @@ from django.shortcuts import render
 from datetime import datetime, timedelta
 from django.http import HttpResponse,JsonResponse
 from django.shortcuts import render
-from .models import Event
+from .models import Event,ShopifyPurchase
 from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
@@ -110,7 +110,6 @@ def shopify_webhook_purchase(request):
     elif request.method == 'POST':
         try:
             data = json.loads(request.body)
-            logger.info(f"Webhook purchase request data: {data}")
             cart_token = data.get('cart_token')
             user_login = data.get('email')
             user_id = data.get('user_id')
@@ -124,18 +123,24 @@ def shopify_webhook_purchase(request):
 
             total_discount = float(data.get('total_discounts', '0.0'))
             # if line items are not present, return error response
-            if not data.get('line_items', []):
+            line_items = data.get('line_items', [])
+            if not line_items:
                 return JsonResponse({'error': 'line_items must be present'}, status=400)
             total_line_items_price = sum(float(item['price']) * item['quantity'] for item in line_items)
             discount_codes = data.get('discount_codes', [])
-            discount_codes_processed = [{'code': code['code'], 'amount': code['amount']} for code in discount_codes]
+
+            discount_codes_processed = []
+            # if discount codes is not empty, process the discount codes
+            if discount_codes != [] and discount_codes != None:
+                discount_codes_processed = [{'code': code['code'], 'amount': code['amount']} for code in discount_codes]
+
             for line_item in data.get('line_items', []):
                 line_item_price_per_item = float(line_item['price'])
                 line_item_quantity = line_item['quantity']
                 line_item_total_price = line_item_price_per_item * line_item_quantity
                 line_item_discount = (line_item_total_price / total_line_items_price) * total_discount if total_line_items_price > 0 else 0
 
-                purchase = Purchase(
+                shopify_purchase = ShopifyPurchase(
                     cart_token=cart_token,
                     user_login=user_login,
                     user_id=user_id,
@@ -149,7 +154,7 @@ def shopify_webhook_purchase(request):
                     discount_amount=str(line_item_discount),
                     logged_time=None  # Set this as needed
                 )
-                purchase.save()
+                shopify_purchase.save()
 
             return HttpResponse(status=200)
         except Exception as e:
