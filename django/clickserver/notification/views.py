@@ -52,35 +52,34 @@ class SaleNotificationView(APIView):
         app_name = self.request.query_params.get('app_name', None)
         session_key = self.request.query_params.get('session_id', None)  
 
-        # if token is None or app_name is None or session_key is None: # respond with error
-        #     return Response({'error': 'token, app_name, session_id must be specified'})
+        if token is None or app_name is None or session_key is None: # respond with error
+            return Response({'error': 'token, app_name, session_id must be specified'})
         
         
-        # try:
-        #     session = Sessions.objects.get(session_key=session_key,app_name=app_name)
-        # except:
-        #     return Response({'error': 'session not found'})
+        try:
+            session = Sessions.objects.get(session_key=session_key,app_name=app_name)
+        except:
+            return Response({'error': 'session not found'})
 
-        # try:
-        #     user = User.objects.get(token=token, app_name=app_name)
-        # except:
-        #     return Response({'error': 'user not found'})
+        try:
+            user = User.objects.get(token=token, app_name=app_name)
+        except:
+            return Response({'error': 'user not found'})
 
-        # if user.purchase_last_4_sessions == 1:
-        #     return Response({'sale_notification': False})
-        # else:
-        #     if session.events_count is None or \
-        #         session.page_load_count is None or \
-        #         session.total_products_visited is None:
-        #             return Response({'error': 'One or more session parameters are None'})
+        if user.purchase_last_4_sessions == 1:
+            return Response({'sale_notification': False})
+        else:
+            if session.events_count is None or \
+                session.page_load_count is None or \
+                session.total_products_visited is None:
+                    return Response({'error': 'One or more session parameters are None'})
 
-        #     if session.events_count >= TOTAL_COUNT_THRESHOLD or \
-        #         session.page_load_count >= PL_COUNT_THRESHOLD or \
-        #             session.total_products_visited >= TOTAL_PRODUCTS_THRESHOLD: #session.session_duration >= SESSION_DURATION_THRESHOLD or \
-        #         return Response({'sale_notification': True})
-        # return Response({'sale_notification': False})
+            if session.events_count >= TOTAL_COUNT_THRESHOLD or \
+                session.page_load_count >= PL_COUNT_THRESHOLD or \
+                    session.total_products_visited >= TOTAL_PRODUCTS_THRESHOLD: #session.session_duration >= SESSION_DURATION_THRESHOLD or \
+                return Response({'sale_notification': True})
+        return Response({'sale_notification': False})
 
-        return Response({'sale_notification': True})
    
     
 
