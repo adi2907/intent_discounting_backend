@@ -10,5 +10,4 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         update_all_user_sessions()
-        logger.info('Updated all user sessions at time %s' % datetime.now())
                             
