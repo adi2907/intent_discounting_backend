@@ -305,14 +305,14 @@ def update_database_chunk(start_time, end_time, app_name):
         g1 = group(update_products.si(new_product_ids,event_ids,app_name,start_time),update_users.si(tokens,event_ids,app_name,start_time))
         # chain update_user_activities to g1
         g2 = chain(g1,group(update_user_activities.si(tokens,event_ids,app_name,start_time),update_sessions.si(session_keys,event_ids,app_name,start_time)))
-        g3 = chain(g2,update_all_user_sessions.si())
+        #g3 = chain(g2,update_all_user_sessions.si())
     else:
         # chain user and user_activities
         g1 = group(update_users.si(tokens,event_ids,app_name,start_time))
         g2 = chain(g1,group(update_user_activities.si(tokens,event_ids,app_name,start_time),update_sessions.si(session_keys,event_ids,app_name,start_time)))
-        g3 = chain(g2,update_all_user_sessions.si())
+        #g3 = chain(g2,update_all_user_sessions.si())
     
-    g3()
+    g2()
     
 @shared_task
 def update_all_user_sessions():
