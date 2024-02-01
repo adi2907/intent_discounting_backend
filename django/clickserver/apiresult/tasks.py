@@ -318,8 +318,10 @@ def update_database_chunk(start_time, end_time, app_name):
 def update_all_user_sessions():
     # change is_active to false if session last logged time is more than SESSION_IDLE_TIME (1 hour)
     sessions = Sessions.objects.filter(is_active=True)
+    current_time = datetime.now()
+    logger.info("update_all_user_sessions start time: " + str(current_time))
     for session in sessions:
-        if (timezone.now() - session.session_end).total_seconds() > (SESSION_IDLE_TIME*60):
+        if (current_time - session.session_end).total_seconds() > (SESSION_IDLE_TIME*60):
             session.is_active = False
             # update session duration
             session.session_duration = (session.session_end - session.session_start).total_seconds()
@@ -346,11 +348,11 @@ def update_all_user_sessions():
                 user.purchase_prev_session = previous_session.has_purchased
 
             # number of sessions last 30 days
-            sessions_last_30_days = Sessions.objects.filter(user=user).filter(logged_time__gte=timezone.now() - timedelta(days=30))
+            sessions_last_30_days = Sessions.objects.filter(user=user).filter(logged_time__gte=current_time - timedelta(days=30))
             user.num_sessions_last_30_days = len(sessions_last_30_days)
 
             # number of sessions last 7 days
-            sessions_last_7_days = Sessions.objects.filter(user=user).filter(logged_time__gte=timezone.now() - timedelta(days=7))
+            sessions_last_7_days = Sessions.objects.filter(user=user).filter(logged_time__gte=current_time - timedelta(days=7))
             user.num_sessions_last_7_days = len(sessions_last_7_days)
             user.save()
             
