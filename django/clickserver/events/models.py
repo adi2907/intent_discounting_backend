@@ -14,7 +14,7 @@ class Event(models.Model):
     event_name = models.TextField(null=True)
     source_url = models.TextField(null=True)
     app_name = models.CharField(max_length=255,db_index=True)
-    click_text = models.TextField(default='')
+    click_text = models.TextField(null=True,default='')
     # add product properties
     product_id = models.CharField(max_length=255,null=True,db_index=True)
     product_name = models.CharField(max_length=255, null=True,db_index=True)
