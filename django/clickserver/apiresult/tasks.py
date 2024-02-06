@@ -37,6 +37,8 @@ def update_products(new_product_ids, event_ids, app_name,start_time):
 
 @shared_task
 def update_individual_product(product_id, event_data, app_name):
+    if not product_id:
+        return
    
     # Check if an item with the given product_id already exists
     item, created = Item.objects.get_or_create(product_id=product_id, app_name=app_name)
@@ -132,7 +134,7 @@ def update_individual_user_activities(user_token, events_data, app_name):
             cart_events = []
 
             for event in user_events:
-                if event['product_id'] == product_id and any(action_item in event['click_text'].lower() for action_item in cart_actions):
+                if event['product_id'] == product_id  and event['click_text'] and any(action_item in event['click_text'].lower() for action_item in cart_actions):
                     cart_events.append(event)
 
             for event in cart_events:
@@ -291,7 +293,7 @@ def update_database_chunk(start_time, end_time, app_name):
     product_ids = product_ids.exclude(product_id__isnull=True).exclude(product_id='').exclude(product_id=0)
     # extract all product ids from database with the same app_name
     db_product_ids = Item.objects.filter(app_name=app_name).values_list('product_id', flat=True).distinct()
-    
+    db_product_ids = [pid for pid in db_product_ids if pid is not None]
     new_product_ids = np.setdiff1d(product_ids, db_product_ids).tolist()
 
     session_keys = events.values_list('session', flat=True).distinct()
