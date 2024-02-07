@@ -24,10 +24,8 @@ class Command(BaseCommand):
         for app_name in app_names:
             events = Event.objects.filter(app_name=app_name,click_time__gte=start_time_events,click_time__lte=end_time_events)
 
-            # Get list of all user tokens from events
             user_tokens_events = set(events.values_list('token', flat=True).distinct())
-            # Get list of all user tokens from User model
-            user_tokens_apiresult = set(User.objects.filter(app_name=app_name).values_list('token', flat=True).distinct())
+            user_tokens_apiresult = set(IdentifiedUser.objects.filter(app_name=app_name,logged_time__gte=start_time_apiresult,logged_time__lte=end_time_apiresult).values_list('tokens', flat=True).distinct())
 
             if not user_tokens_events.issubset(user_tokens_apiresult):
                 missing_tokens = user_tokens_events - user_tokens_apiresult
@@ -35,8 +33,8 @@ class Command(BaseCommand):
         
             # get list of all sessions and check if they are in Sessions model
             sessions_events = set(events.values_list('session', flat=True).distinct())
-            sessions_apiresult = set(Sessions.objects.filter(app_name=app_name).values_list('session_key', flat=True).distinct())
-
+            sessions_apiresult = set(Sessions.objects.filter(app_name=app_name,session_start__gte=start_time_apiresult,session_start__lte=end_time_apiresult).values_list('session_key', flat=True).distinct())
+            
             if not sessions_events.issubset(sessions_apiresult):
                 missing_sessions = sessions_events - sessions_apiresult
                 logger.info(f"Missing sessions in Sessions model for app {app_name}: {missing_sessions}")
