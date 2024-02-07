@@ -52,7 +52,6 @@ class SaleNotificationView(APIView):
         # log the payload
         logger.info("Payload: %s" % request.query_params)
         
-
         token = self.request.query_params.get('token', None)
         app_name = self.request.query_params.get('app_name', None)
         session_key = self.request.query_params.get('session_id', None)  
