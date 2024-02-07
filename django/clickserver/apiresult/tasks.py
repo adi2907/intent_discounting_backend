@@ -19,7 +19,6 @@ from django.utils import timezone
 
 @shared_task
 def update_products(new_product_ids, event_ids, app_name,start_time):
-    logger.info("update_products start time "+str(start_time))
     # Get events from the database from event_ids
     events = Event.objects.filter(id__in=event_ids)
 
@@ -61,8 +60,7 @@ def update_individual_product(product_id, event_data, app_name):
 
 @shared_task
 def update_users(tokens, event_ids, app_name,start_time):
-    # log the start time and end time
-    logger.info("update_users start time: " + str(start_time))
+        
     events = Event.objects.filter(id__in=event_ids)
     event_data = events.values('id', 'token', 'click_time', 'session', 'user_id', 'user_login')
     with ThreadPoolExecutor() as executor:
@@ -95,7 +93,6 @@ def update_individual_user(user_token, event_data, app_name):
 
 @shared_task
 def update_user_activities(tokens, event_ids, app_name,start_time):
-    logger.info("update_user_activities start time: " + str(start_time))
     # Fetch all events related to the event_ids
     events = Event.objects.filter(id__in=event_ids)
     events_data = events.values('id', 'token', 'click_time', 'session', 'user_id', 'user_login', 'product_id', 'event_type', 'click_text')
@@ -202,6 +199,7 @@ def update_individual_session(session_key,events_data, app_name):
         session.status = 'active'
         session.save()
     except:
+        logger.info("Creating session: " + session_key)
         session = Sessions(session_key=session_key,app_name=app_name)
         user = User.objects.get(token=user_token,app_name=app_name)
         session.user = user
@@ -307,12 +305,12 @@ def update_database_chunk(start_time, end_time, app_name):
         g1 = group(update_products.si(new_product_ids,event_ids,app_name,start_time),update_users.si(tokens,event_ids,app_name,start_time))
         # chain update_user_activities to g1
         g2 = chain(g1,group(update_user_activities.si(tokens,event_ids,app_name,start_time),update_sessions.si(session_keys,event_ids,app_name,start_time)))
-        #g3 = chain(g2,update_all_user_sessions.si())
+     
     else:
         # chain user and user_activities
         g1 = group(update_users.si(tokens,event_ids,app_name,start_time))
         g2 = chain(g1,group(update_user_activities.si(tokens,event_ids,app_name,start_time),update_sessions.si(session_keys,event_ids,app_name,start_time)))
-        #g3 = chain(g2,update_all_user_sessions.si())
+       
     
     g2()
     
@@ -321,7 +319,6 @@ def update_all_user_sessions():
     # change is_active to false if session last logged time is more than SESSION_IDLE_TIME (1 hour)
     sessions = Sessions.objects.filter(is_active=True)
     current_time = datetime.now()
-    logger.info("update_all_user_sessions start time: " + str(current_time))
     for session in sessions:
         if (current_time - session.session_end).total_seconds() > (SESSION_IDLE_TIME*60):
             session.is_active = False
@@ -335,18 +332,13 @@ def update_all_user_sessions():
             previous_session = None
             if len(previous_4_sessions) >= 1:
                 previous_session = previous_4_sessions[0] #most recent session excluding the current session
-            # print the session keys of the previous 4 sessions
-            logger.info("Previous 4 sessions for user: %s, app_name: %s", user.token, user.app_name)
-            for session in previous_4_sessions:
-                logger.info(session.session_key)
+           
             purchase_history = [session.has_purchased for session in previous_4_sessions]
             user.purchase_last_4_sessions = 1 if sum(purchase_history) > 0 else 0
             user.carted_last_4_sessions = 1 if sum([session.has_carted for session in previous_4_sessions]) > 0 else 0
             
             # if previous session then assign purchase_prev_session to has_purchased of previous session else assign 0
             if previous_session:
-                logger.info("Previous session for user: %s, app_name: %s", user.token, user.app_name)
-                logger.info(previous_session.session_key)
                 user.purchase_prev_session = previous_session.has_purchased
 
             # number of sessions last 30 days
@@ -365,24 +357,13 @@ def update_database():
     time_chunk = 30
     start_time = datetime.now() - timedelta(seconds=time_chunk)
     end_time = datetime.now()
-    # start_time = datetime(2023, 1, 1, 0, 0, 0)
-    # end_time = datetime(2023, 2, 1, 0, 0, 0)
-    # time_chunk = 60
+
    
     
     for app_name in Event.objects.values_list('app_name', flat=True).distinct():
         update_database_chunk(start_time, end_time, app_name)
 
-        # get all events in chunks of 5 minutes
-        # while start_time < end_time:
-        #     # chain update_database_chunk and update_all_user_sessions
-                
-        #     update_database_chunk(start_time, start_time+timedelta(minutes=time_chunk), app_name)
-            
-        #     logger.info("Sleeping....")
-        #     time.sleep(60)
-        #     # update start time
-        #     start_time = start_time+timedelta(minutes=time_chunk)
+
         
         
         
