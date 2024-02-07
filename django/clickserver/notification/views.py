@@ -42,7 +42,7 @@ class SubmitContactView(APIView):
             i_user.save()
             return Response({"status": "success"}, status=200)
         except Exception as e:
-            logger.info(str(e))
+            logger.info("Error in sending Alme contact details: %s" % str(e))
             return Response({"Error in sending Alme contact details": str(e)})
 
 
@@ -53,17 +53,24 @@ class SaleNotificationView(APIView):
         session_key = self.request.query_params.get('session_id', None)  
 
         if token is None or app_name is None or session_key is None: # respond with error
+           
+            logger.info("Error in sale notification: token, app_name, session_id must be specified")
+            logger.info("token: %s, app_name: %s, session_id: %s" % (token, app_name, session_key))
             return Response({'error': 'token, app_name, session_id must be specified'})
         
         
         try:
             session = Sessions.objects.get(session_key=session_key,app_name=app_name)
         except:
+            
+            logger.info("Error in sale notification: session not found for token: %s, app_name: %s, session_id: %s" % (token, app_name, session_key))
             return Response({'error': 'session not found'})
 
         try:
             user = User.objects.get(token=token, app_name=app_name)
         except:
+           
+            logger.info("Error in sale notification: user not found for token: %s, app_name: %s, session_id: %s" % (token, app_name, session_key))
             return Response({'error': 'user not found'})
 
         if user.purchase_last_4_sessions == 1:
