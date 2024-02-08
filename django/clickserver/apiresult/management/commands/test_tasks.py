@@ -20,7 +20,7 @@ class Command(BaseCommand):
 
         # get list of all app names
         app_names = Event.objects.values_list('app_name', flat=True).distinct()
-        flag = False
+
         for app_name in app_names:
             events = Event.objects.filter(app_name=app_name,click_time__gte=start_time_events,click_time__lte=end_time_events)
 
@@ -61,8 +61,7 @@ class Command(BaseCommand):
                 logger.info(f"Number of carts in events model: {carts_events.count()} and in Cart model: {carts_apiresult.count()}")
                 flag = True
         
-        if flag == False:
-            logger.info("All tests passed")
+      
 
 
 
