@@ -12,7 +12,7 @@ class Command(BaseCommand):
         logger.info("Testing aggregation")
         # Define the 15-minute interval
         end_time_events = datetime.now() - timedelta(minutes=5)
-        start_time_events = end_time_events - timedelta(minutes=10)
+        start_time_events = end_time_events - timedelta(minutes=5)
 
         # log the start and end time
         logger.info(f"Start time for events: {start_time_events} and end time for events: {end_time_events}")
