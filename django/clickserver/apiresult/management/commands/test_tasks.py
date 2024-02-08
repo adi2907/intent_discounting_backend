@@ -34,7 +34,7 @@ class Command(BaseCommand):
         
             # get list of all sessions and check if they are in Sessions model
             sessions_events = set(events.values_list('session', flat=True).distinct())
-            sessions_apiresult = set(Sessions.objects.filter(app_name=app_name,logged_time_gte=start_time_apiresult,logged_time_lte=end_time_apiresult).values_list('session_key', flat=True).distinct())
+            sessions_apiresult = set(Sessions.objects.filter(app_name=app_name,logged_time__gte=start_time_apiresult,logged_time__lte=end_time_apiresult).values_list('session_key', flat=True).distinct())
             
             if not sessions_events.issubset(sessions_apiresult):
                 missing_sessions = sessions_events - sessions_apiresult
