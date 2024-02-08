@@ -10,7 +10,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
 
-
+        logger.info("Testing aggregation")
         # Define the 15-minute interval
         end_time_events = datetime.now() - timedelta(minutes=15)
         start_time_events = end_time_events - timedelta(minutes=15)
