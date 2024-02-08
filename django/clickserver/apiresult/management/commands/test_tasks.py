@@ -11,14 +11,14 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
 
         # Define the 15-minute interval
-        end_time_events = datetime.now() - timedelta(minutes=15)
-        start_time_events = end_time_events - timedelta(minutes=15)
+        end_time_events = datetime.now() - timedelta(minutes=5)
+        start_time_events = end_time_events - timedelta(minutes=10)
 
         # log the start and end time
         logger.info(f"Start time for events: {start_time_events} and end time for events: {end_time_events}")
 
         end_time_apiresult = datetime.now()
-        start_time_apiresult = end_time_apiresult - timedelta(minutes=45)
+        start_time_apiresult = end_time_apiresult - timedelta(minutes=15)
         logger.info(f"Start time for apiresult: {start_time_apiresult} and end time for apiresult: {end_time_apiresult}")
 
         # get list of all app names
