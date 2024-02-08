@@ -12,18 +12,15 @@ class Command(BaseCommand):
         logger.info("Testing aggregation")
         # Define the 15-minute interval
         end_time_events = datetime.now() - timedelta(minutes=5)
-        start_time_events = end_time_events - timedelta(minutes=5)
+        start_time_events = end_time_events - timedelta(minutes=10)
 
-        # log the start and end time
-        logger.info(f"Start time for events: {start_time_events} and end time for events: {end_time_events}")
 
         end_time_apiresult = datetime.now()
-        start_time_apiresult = end_time_apiresult - timedelta(minutes=15)
-        logger.info(f"Start time for apiresult: {start_time_apiresult} and end time for apiresult: {end_time_apiresult}")
+        start_time_apiresult = end_time_apiresult - timedelta(minutes=30)
 
         # get list of all app names
         app_names = Event.objects.values_list('app_name', flat=True).distinct()
-
+        flag = False
         for app_name in app_names:
             events = Event.objects.filter(app_name=app_name,click_time__gte=start_time_events,click_time__lte=end_time_events)
 
@@ -33,6 +30,7 @@ class Command(BaseCommand):
             if not user_tokens_events.issubset(user_tokens_apiresult):
                 missing_tokens = user_tokens_events - user_tokens_apiresult
                 logger.info(f"Missing tokens in User model for app {app_name}: {missing_tokens}")
+                flag = True
         
             # get list of all sessions and check if they are in Sessions model
             sessions_events = set(events.values_list('session', flat=True).distinct())
@@ -41,6 +39,7 @@ class Command(BaseCommand):
             if not sessions_events.issubset(sessions_apiresult):
                 missing_sessions = sessions_events - sessions_apiresult
                 logger.info(f"Missing sessions in Sessions model for app {app_name}: {missing_sessions}")
+                flag = True
             
 
             # tally the number of visits
@@ -51,6 +50,7 @@ class Command(BaseCommand):
             if visits_events.count() != visits_apiresult.count():
                 logger.info(f"Number of visits in Visits model for app {app_name} does not match number of visits in events model")
                 logger.info(f"Number of visits in events model: {visits_events.count()} and in Visits model: {visits_apiresult.count()}")
+                flag = True
             
             # tally the number of carts
             # cart is where click_text is 'add to cart'
@@ -59,6 +59,10 @@ class Command(BaseCommand):
             if carts_events.count() != carts_apiresult.count():
                 logger.info(f"Number of carts in Cart model for app {app_name} does not match number of carts in events model")
                 logger.info(f"Number of carts in events model: {carts_events.count()} and in Cart model: {carts_apiresult.count()}")
+                flag = True
+        
+        if flag == False:
+            logger.info("All tests passed")
 
 
 
