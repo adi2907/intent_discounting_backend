@@ -212,11 +212,10 @@ def shopify_webhook_purchase(request):
 def purchase(request):
     if request.method == 'GET':
         return JsonResponse({'success': False, 'message': 'This is the purchase url. Please send a post request to this url'})
-
+    
     if request.method == 'POST':
         data = json.loads(request.body)
         cart_token = data.get('cart_token')
-        
         if not cart_token:
             return JsonResponse({'success': False, 'message': 'Cart token is empty'})
         
@@ -251,13 +250,18 @@ def purchase(request):
                         name=product.get('product_name'),
                         price=product.get('product_price')
                     )
-                
+                created_at_str = data.get('created_at','')
+                # if created_at is not present, use current time
+                if created_at_str == '':
+                    created_at_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                else:
+                    created_at_time = created_at_str
                 event = Event(
                     token=alme_user_token,
                     session=session_id,
                     user_login=data.get('user_login', ''),
-                    user_id=data.get('user_id', ''),
-                    click_time=datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                    user_id=data.get('user_id', ''),       
+                    click_time=created_at_time,
                     user_regd=data.get('user_regd', ''),
                     event_type='purchase',
                     event_name='purchase',
