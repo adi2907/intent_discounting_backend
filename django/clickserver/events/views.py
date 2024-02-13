@@ -48,7 +48,7 @@ def events(request):
             event.event_name = item.get('event_name', '')
             event.source_url = item.get('source_url', '')
             event.app_name = item.get('app_name','')
-            # temp fix for desi_sandook
+            # temp fix for desi_sandook, should be removed later
             if event.app_name == 'desi_sandook':
                 event.app_name = 'desisandook.myshopify.com'
             event.click_text = item.get('click_text','')
