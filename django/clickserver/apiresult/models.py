@@ -17,8 +17,8 @@ class Item(models.Model):
 # Create compiled user model
 class User(models.Model):
     token = models.CharField(max_length=255,db_index=True)
-    user_login = models.TextField()
-    registered_user_id = models.TextField()
+    user_login = models.TextField(null=True)
+    registered_user_id = models.TextField(null=True)
     app_name = models.CharField(max_length=255,null=True,db_index=True)
     # date time of last visit
     last_visit = models.DateTimeField()
