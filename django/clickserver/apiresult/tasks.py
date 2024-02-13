@@ -175,9 +175,14 @@ def update_individual_session(session_key,events_data, app_name):
     # if session exists then update it else create it
     session_variables = get_session_variables(session_events,app_name)
     try:
-        session = Sessions.objects.get(session_key=session_key)     
-        user = User.objects.get(token=user_token,app_name=app_name)
-        session.user = user
+        session = Sessions.objects.get(session_key=session_key)   
+        try:
+            user = User.objects.get(token=user_token,app_name=app_name)
+            session.user = user
+        except:
+            logger.info("Exception getting user: " + user_token + " for session: " + session_key)
+            return  
+    
 
         # get all session variables
         for key, value in session_variables.items():
@@ -200,9 +205,14 @@ def update_individual_session(session_key,events_data, app_name):
         session.save()
     except:
         logger.info("Creating session: " + session_key)
+        # put in try catch and log token and app_name if it fails
         session = Sessions(session_key=session_key,app_name=app_name)
-        user = User.objects.get(token=user_token,app_name=app_name)
-        session.user = user
+        try:
+            user = User.objects.get(token=user_token,app_name=app_name)
+            session.user = user
+        except:
+            logger.info("Exception getting user: " + user_token + " for session: " + session_key)
+            return
         # set all session variables
         for key, value in session_variables.items():
             setattr(session, key, value)
