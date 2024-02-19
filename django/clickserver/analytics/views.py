@@ -515,8 +515,8 @@ class IdentifiedUserActivityView(APIView):
                 'last_visited': user.logged_time,
                 'visited': 0,
                 'added_to_cart': 0,
-                'purchased': 0
-
+                'purchased': 0,
+                'regd_user_id': user.registered_user_id
             }
 
             for token in tokens:
