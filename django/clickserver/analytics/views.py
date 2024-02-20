@@ -484,6 +484,7 @@ Response Format:
     "visited": number,
     "added_to_cart": number,
     "purchased": number
+    "regd_user_id": string
   },
   ...
 ]
