@@ -10,17 +10,20 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         logger.info("Testing aggregation")
-        # Define the 15-minute interval
-        end_time_events = datetime.now() - timedelta(minutes=5)
-        start_time_events = end_time_events - timedelta(minutes=10)
+        # running test suite every 15 minutes
+        # will test events in 15 minute intervals
+       
+        end_time_events = datetime.now() - timedelta(minutes=15) # now-15 minutes
+        start_time_events = end_time_events - timedelta(minutes=15) # now-30 minutes
 
 
-        end_time_apiresult = datetime.now()
-        start_time_apiresult = end_time_apiresult - timedelta(minutes=30)
+        # give extra 1 min to apiresult to update- on either side of the 15 min interval
+        end_time_apiresult = datetime.now() - timedelta(minutes=14) # now-14 minutes 
+        start_time_apiresult = end_time_apiresult - timedelta(minutes=17) # now-31 minutes 
 
         # get list of all app names
         app_names = Event.objects.values_list('app_name', flat=True).distinct()
-
+        flag = False
         for app_name in app_names:
             events = Event.objects.filter(app_name=app_name,click_time__gte=start_time_events,click_time__lte=end_time_events)
 
@@ -31,6 +34,7 @@ class Command(BaseCommand):
                 missing_tokens = user_tokens_events - user_tokens_apiresult
                 logger.info(f"Missing tokens in User model for app {app_name}: {missing_tokens}")
                 flag = True
+                break
         
             # get list of all sessions and check if they are in Sessions model
             sessions_events = set(events.values_list('session', flat=True).distinct())
@@ -40,6 +44,7 @@ class Command(BaseCommand):
                 missing_sessions = sessions_events - sessions_apiresult
                 logger.info(f"Missing sessions in Sessions model for app {app_name}: {missing_sessions}")
                 flag = True
+                break
             
 
             # tally the number of visits
@@ -51,6 +56,7 @@ class Command(BaseCommand):
                 logger.info(f"Number of visits in Visits model for app {app_name} does not match number of visits in events model")
                 logger.info(f"Number of visits in events model: {visits_events.count()} and in Visits model: {visits_apiresult.count()}")
                 flag = True
+                break
             
             # tally the number of carts
             # cart is where click_text is 'add to cart'
@@ -60,8 +66,10 @@ class Command(BaseCommand):
                 logger.info(f"Number of carts in Cart model for app {app_name} does not match number of carts in events model")
                 logger.info(f"Number of carts in events model: {carts_events.count()} and in Cart model: {carts_apiresult.count()}")
                 flag = True
-        
-      
+                break
+
+        if flag == True:
+            logger.info("Aggregation test failed")
 
 
 
