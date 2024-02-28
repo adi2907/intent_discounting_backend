@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 from uuid import uuid4
 from apiresult.utils.config import *
 from apiresult.models import *
+import hashlib
 
 
 # accept post requests from the xhttp request and save the data to the database
@@ -27,12 +28,14 @@ def events(request):
         events = data.get('events', [])
         session_id = data.get('session_id')
         if not session_id:
-            session_id = uuid4().hex
+            raw_session_id = f"{data.get('app_name', 'default_app')}_{datetime.now().isoformat()}"
+            session_id = hashlib.sha256(raw_session_id.encode()).hexdigest()
         lastEventTimestamp = data.get('lastEventTimestamp')
         alme_user_token = data.get('alme_user_token')
         current_time = datetime.now()
         if lastEventTimestamp and (current_time - datetime.fromtimestamp(int(lastEventTimestamp))).total_seconds() > (SESSION_IDLE_TIME*60):
-            session_id = uuid4().hex
+            raw_session_id = f"{data.get('app_name', 'default_app')}_{datetime.now().isoformat()}"
+            session_id = hashlib.sha256(raw_session_id.encode()).hexdigest()
             
         for item in events:
             event = Event()

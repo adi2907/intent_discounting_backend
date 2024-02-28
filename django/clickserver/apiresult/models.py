@@ -86,7 +86,7 @@ class Sessions(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE,null=True)
     is_active = models.BooleanField(null=True,default=True)
     app_name = models.CharField(max_length=255,null=True,db_index=True)
-    session_key = models.CharField(max_length=255,null=False,db_index=True)
+    session_key = models.CharField(max_length=255,null=False,db_index=True,unique=True)
     session_start = models.DateTimeField(db_index=True)
     session_end = models.DateTimeField(db_index=True)
     events_count = models.IntegerField(null=True)
