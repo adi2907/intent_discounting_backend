@@ -164,12 +164,14 @@ def update_sessions(session_keys, events_data, app_name):
 
 @shared_task
 def update_individual_session(session_key,events_data, app_name):
+    logger.info("Processing session: " + session_key)
     session_events = [event for event in events_data if event['session'] == session_key]
     if not session_events:
         return
     user_token = session_events[0]['token']  
     # if session exists then update it else create it
     session_variables = get_session_variables(session_events,app_name)
+    logger.info("Session variables: " + str(session_variables))
 
     with transaction.atomic():
         session,created = Sessions.objects.get_or_create(session_key=session_key,app_name=app_name)
