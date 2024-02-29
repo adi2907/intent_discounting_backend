@@ -222,10 +222,9 @@ def get_session_variables(session_events,app_name):
     
     # update session
     session_start = min(session_events, key=lambda e: e['click_time'])['click_time']
-    
-    session_start = datetime.strptime(session_start, '%Y-%m-%dT%H:%M:%S.%f')
+    session_start = datetime.strptime(session_start, '%Y-%m-%dT%H:%M:%S')
     session_end = max(session_events, key=lambda e: e['click_time'])['click_time']
-    session_end = datetime.strptime(session_end, '%Y-%m-%dT%H:%M:%S.%f')
+    session_end = datetime.strptime(session_end, '%Y-%m-%dT%H:%M:%S')
     
 
     events_count = len(session_events)
