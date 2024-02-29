@@ -182,16 +182,12 @@ def update_individual_session(session_key,events_data, app_name):
             return
         
         if created:
-            # set all session variables
-            logger.info("Creating new session: " + session_key)
             for key, value in session_variables.items():
                 setattr(session, key, value)
             session.logged_time = session_variables['session_end']
             session.save()
         else:
             # update the existing session variables
-            # log the session_key
-            logger.info("Updating session: " + session_key)
             for key, value in session_variables.items():
                 if key in ['events_count', 'page_load_count', 'click_count', 'total_products_visited', 'purchase_count', 'cart_count',
                         'product_total_price']:
