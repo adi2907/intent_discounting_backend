@@ -183,6 +183,7 @@ def update_individual_session(session_key,events_data, app_name):
         
         if created:
             # set all session variables
+            logger.info("Creating new session: " + session_key)
             for key, value in session_variables.items():
                 setattr(session, key, value)
             session.logged_time = session_variables['session_end']
