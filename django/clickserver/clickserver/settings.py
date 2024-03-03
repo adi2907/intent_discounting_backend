@@ -107,7 +107,7 @@ DATABASES = {
             # #ip address of the database
             # 'HOST':'localhost',
             # 'PORT':'3306',
-            
+            #TODO: Change back to original database after one time run
             'NAME':'events',
             'USER':'new_user',
             'PASSWORD':'Circuit@123',
@@ -131,7 +131,7 @@ LOGGING = {
         'file': {
             'level': 'INFO',
             'class': 'logging.FileHandler',
-            #'filename': '/home/ubuntu/clickstream/django/clickserver/logs/info.log',
+            #'filename': '/home/ubuntu/clickstream/django/clickserver/logs/info.log', #TODO: Change back to this log file
             'filename': '/Users/adityaganguli/Documents/Technew/clickstream-server/django/clickserver/logs/info.log',
             'formatter': 'standard',
         },
@@ -192,7 +192,7 @@ CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
 CELERY_BEAT_SCHEDULE = {
     'update-every-minute': {
         'task': 'apiresult.tasks.update_database',
-        'schedule': 60, # 60 seconds
+        'schedule': 120, # TODO: Change to 60 seconds
     },
 }
 
