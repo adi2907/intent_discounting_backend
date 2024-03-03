@@ -98,9 +98,9 @@ SESSION_COOKIE_SECURE = True
 DATABASES = {
         'default': {
             'ENGINE':'django.db.backends.mysql',
-            'OPTIONS':{
-                'read_default_file':'/home/ubuntu/clickstream/auth/mysql.cnf'
-            },
+            #'OPTIONS':{
+            #    'read_default_file':'/home/ubuntu/clickstream/auth/mysql.cnf'
+            #},
             # 'NAME':'events',
             # 'USER':'root',
             # 'PASSWORD':'nexarc@123',
@@ -108,13 +108,13 @@ DATABASES = {
             # 'HOST':'localhost',
             # 'PORT':'3306',
             
-            # 'NAME':'events',
-            # 'USER':'new_user',
-            # 'PASSWORD':'Circuit@123',
-            # #ip address of the database
-            # 'HOST':'3.6.225.178',
-            # #'HOST':'localhost',
-            # 'PORT':'3306',
+            'NAME':'events',
+            'USER':'new_user',
+            'PASSWORD':'Circuit@123',
+            #ip address of the database
+            'HOST':'3.6.225.178',
+            'HOST':'localhost',
+            'PORT':'3306',
             },
         }
 
@@ -131,7 +131,8 @@ LOGGING = {
         'file': {
             'level': 'INFO',
             'class': 'logging.FileHandler',
-            'filename': '/home/ubuntu/clickstream/django/clickserver/logs/info.log',
+            #'filename': '/home/ubuntu/clickstream/django/clickserver/logs/info.log',
+            'filename': '/Users/adityaganguli/Documents/Technew/clickstream-server/django/clickserver/logs/info.log',
             'formatter': 'standard',
         },
     },

@@ -15,6 +15,7 @@ from apiresult.utils.app_actions import app_actions
 from apiresult.utils.config import *
 from django.utils import timezone
 from django.db import transaction
+from django.core.cache import cache
 
 
 
@@ -62,7 +63,7 @@ def update_individual_product(product_id, events_data, app_name):
 
 
 @shared_task
-def update_users(tokens, events_data, app_name):      
+def update_users(tokens, events_data, app_name):    
     with ThreadPoolExecutor() as executor:
         user_tasks = [executor.submit(update_individual_user, user_token, events_data, app_name) for user_token in tokens]
         for future in concurrent.futures.as_completed(user_tasks):
@@ -344,40 +345,52 @@ def update_database_chunk(start_time, end_time, app_name, events_data):
     
 
 @shared_task
-def update_database():    
-    time_chunk = 30
-    start_time = datetime.now() - timedelta(seconds=time_chunk)
-    end_time = datetime.now()
+def update_database():   
+    chunk_start_time = cache.get('last_chunk_start_time', datetime(2024, 2, 1, 0, 0, 0))
+    chunk_end_time = chunk_start_time + timedelta(minutes=30)
 
-    events = Event.objects.filter(logged_time__gte=start_time, logged_time__lte=end_time)
-    events_data_by_app_name = {}
 
-    for event in events:
-        event_data = {
-            'token': event.token,
-            'session': event.session,
-            'user_login': event.user_login,
-            'user_id': event.user_id,
-            'click_time': event.click_time.isoformat(),
-            'user_regd': event.user_regd,
-            'event_type': event.event_type,
-            'event_name': event.event_name,
-            'source_url': event.source_url,
-            'app_name': event.app_name,
-            'click_text': event.click_text,
-            'product_id': event.product_id,
-            'product_name': event.product_name,
-            'product_price': event.product_price,
-            'logged_time': event.logged_time.isoformat() if event.logged_time else None,
-        }
+    # Fetch events within the current chunk
+    events = Event.objects.filter(logged_time__gte=chunk_start_time, logged_time__lte=chunk_end_time)
 
-        if event.app_name not in events_data_by_app_name:
-            events_data_by_app_name[event.app_name] = []
-        
-        events_data_by_app_name[event.app_name].append(event_data)
+    # Process events if there are any
+    if events.exists():
+        events_data_by_app_name = {}
+        for event in events:
+            event_data = {
+                'token': event.token,
+                'session': event.session,
+                'user_login': event.user_login,
+                'user_id': event.user_id,
+                'click_time': event.click_time.isoformat(),
+                'user_regd': event.user_regd,
+                'event_type': event.event_type,
+                'event_name': event.event_name,
+                'source_url': event.source_url,
+                'app_name': event.app_name,
+                'click_text': event.click_text,
+                'product_id': event.product_id,
+                'product_name': event.product_name,
+                'product_price': event.product_price,
+                'logged_time': event.logged_time.isoformat() if event.logged_time else None,
+            }
+            app_name = event.app_name
+            if app_name not in events_data_by_app_name:
+                events_data_by_app_name[app_name] = []
+            events_data_by_app_name[app_name].append(event_data)
+
+        for app_name, events_data in events_data_by_app_name.items():
+            # You might need to adjust the function to accept start and end times
+            update_database_chunk.apply_async((chunk_start_time, chunk_end_time, app_name, events_data))
+            
+    # Move to the next chunk
+    next_chunk_start_time = chunk_start_time + timedelta(minutes=30)
+    cache.set('last_chunk_start_time', next_chunk_start_time, None)  # None for no timeout on cache
+    if next_chunk_start_time >= datetime(2024, 2, 29, 23, 59, 59):
+        logger.info("All events processed")
+        return
     
-    for app_name, events_data in events_data_by_app_name.items():
-        update_database_chunk(start_time, end_time, app_name, events_data)
+
 
 
 
@@ -390,3 +403,4 @@ def update_database():
         
                 
             
+

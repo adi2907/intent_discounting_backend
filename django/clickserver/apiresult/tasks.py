@@ -345,11 +345,11 @@ def update_database_chunk(start_time, end_time, app_name, events_data):
 @shared_task
 def update_database():   
 
-    overall_start_time = datetime(2024, 2, 29, 0, 0, 0)  # Starting at the beginning of the day
+    overall_start_time = datetime(2024, 2, 1, 0, 0, 0)  # Starting at the beginning of the day
     overall_end_time = datetime(2024, 2, 29, 23, 59, 59)  # Ending at the end of the day
 
     # Define the chunk size in minutes
-    chunk_size = timedelta(minutes=30)
+    chunk_size = timedelta(minutes=60)
 
     # Initialize the start time for the first chunk
     chunk_start_time = overall_start_time
@@ -392,7 +392,7 @@ def update_database():
             for app_name, events_data in events_data_by_app_name.items():
                 # You might need to adjust the function to accept start and end times
                 update_database_chunk(chunk_start_time, chunk_end_time, app_name, events_data)
-
+            time.sleep(60)
         # Move to the next chunk
         chunk_start_time += chunk_size
     # time_chunk = 30

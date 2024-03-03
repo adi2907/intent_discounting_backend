@@ -18,7 +18,7 @@ class Item(models.Model):
 class User(models.Model):
     token = models.CharField(max_length=255,db_index=True)
     user_login = models.TextField(null=True)
-    registered_user_id = models.TextField(null=True)
+    registered_user_id = models.CharField(max_length=255,null=True) # TODO: Link this as foreign key to IdentifiedUser
     app_name = models.CharField(max_length=255,null=True,db_index=True)
     # date time of last visit
     last_visit = models.DateTimeField()
@@ -63,7 +63,7 @@ class Cart(models.Model):
     
     
 class IdentifiedUser(models.Model):
-    registered_user_id = models.TextField()
+    registered_user_id = models.CharField(max_length=255,null=True)
     app_name = models.CharField(max_length=255,null=True,db_index=True)
     # array of sub users that are associated with this user
     phone = models.CharField(max_length=15, null=True)
@@ -71,6 +71,9 @@ class IdentifiedUser(models.Model):
     name = models.CharField(max_length=255, null=True)
     tokens = models.JSONField(null=True)
     logged_time = models.DateTimeField(auto_now_add=True,null=True)
+    class Meta:
+        unique_together = ('registered_user_id', 'app_name')
+
     
 
 class UserSummary(models.Model):
