@@ -15,6 +15,32 @@ from apiresult.utils.config import *
 from apiresult.models import *
 import hashlib
 
+# Example usage
+# curl -X POST https://almeapp.com/events \
+# -H "Content-Type: application/json" \
+# -H "Origin: https://www.almeapp.co.in" \
+# -d '{
+#     "shop": "almestore1.myshopify.com",
+#     "events": [
+#         {
+#             "user_login": null,
+#             "user_id": null,
+#             "user_regd": "",
+#             "click_time": 1709702150,
+#             "click_text": "",
+#             "event_type": "page_load",
+#             "event_name": "page_load",
+#             "source_url": "https://almestore1.myshopify.com/",
+#             "app_name": "almestore1.myshopify.com",
+#             "product_id": null,
+#             "product_name": null,
+#             "product_price": null
+#         },
+#     ],
+#     "session_id": "1b562bf038ac4bdf8a3e8536511ce711",
+#     "alme_user_token": "2789929o260",
+#     "lastEventTimestamp": "1708336987"
+# }'
 
 # accept post requests from the xhttp request and save the data to the database
 @csrf_exempt

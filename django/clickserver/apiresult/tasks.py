@@ -152,7 +152,8 @@ def update_identified_user_details(user_events, user, app_name):
         # Update or create the IdentifiedUser instance
         IdentifiedUser.objects.update_or_create(
             registered_user_id=user.registered_user_id,
-            defaults={'app_name': app_name, 'tokens': [user.token]}
+            app_name=app_name,
+            defaults={'tokens': [user.token]}
         )
 
 @shared_task
@@ -343,91 +344,39 @@ def update_database_chunk(start_time, end_time, app_name, events_data):
     
 
 @shared_task
-def update_database():   
+def update_database():    
+    start_time = datetime.now() - timedelta(seconds=TIME_CHUNK)
+    end_time = datetime.now()
 
-    overall_start_time = datetime(2024, 2, 1, 0, 0, 0)  # Starting at the beginning of the day
-    overall_end_time = datetime(2024, 2, 29, 23, 59, 59)  # Ending at the end of the day
+    events = Event.objects.filter(logged_time__gte=start_time, logged_time__lte=end_time)
+    events_data_by_app_name = {}
 
-    # Define the chunk size in minutes
-    chunk_size = timedelta(minutes=60)
+    for event in events:
+        event_data = {
+            'token': event.token,
+            'session': event.session,
+            'user_login': event.user_login,
+            'user_id': event.user_id,
+            'click_time': event.click_time.isoformat(),
+            'user_regd': event.user_regd,
+            'event_type': event.event_type,
+            'event_name': event.event_name,
+            'source_url': event.source_url,
+            'app_name': event.app_name,
+            'click_text': event.click_text,
+            'product_id': event.product_id,
+            'product_name': event.product_name,
+            'product_price': event.product_price,
+            'logged_time': event.logged_time.isoformat() if event.logged_time else None,
+        }
 
-    # Initialize the start time for the first chunk
-    chunk_start_time = overall_start_time
-
-    while chunk_start_time < overall_end_time:
-        # Calculate the end time for the current chunk
-        chunk_end_time = chunk_start_time + chunk_size
-        if chunk_end_time > overall_end_time:
-            chunk_end_time = overall_end_time
-
-        # Fetch events within the current chunk
-        events = Event.objects.filter(logged_time__gte=chunk_start_time, logged_time__lte=chunk_end_time)
-
-        # Process events if there are any
-        if events.exists():
-            events_data_by_app_name = {}
-            for event in events:
-                event_data = {
-                    'token': event.token,
-                    'session': event.session,
-                    'user_login': event.user_login,
-                    'user_id': event.user_id,
-                    'click_time': event.click_time.isoformat(),
-                    'user_regd': event.user_regd,
-                    'event_type': event.event_type,
-                    'event_name': event.event_name,
-                    'source_url': event.source_url,
-                    'app_name': event.app_name,
-                    'click_text': event.click_text,
-                    'product_id': event.product_id,
-                    'product_name': event.product_name,
-                    'product_price': event.product_price,
-                    'logged_time': event.logged_time.isoformat() if event.logged_time else None,
-                }
-                app_name = event.app_name
-                if app_name not in events_data_by_app_name:
-                    events_data_by_app_name[app_name] = []
-                events_data_by_app_name[app_name].append(event_data)
-
-            for app_name, events_data in events_data_by_app_name.items():
-                # You might need to adjust the function to accept start and end times
-                update_database_chunk(chunk_start_time, chunk_end_time, app_name, events_data)
-            time.sleep(60)
-        # Move to the next chunk
-        chunk_start_time += chunk_size
-    # time_chunk = 30
-    # start_time = datetime.now() - timedelta(seconds=time_chunk)
-    # end_time = datetime.now()
-
-    # events = Event.objects.filter(logged_time__gte=start_time, logged_time__lte=end_time)
-    # events_data_by_app_name = {}
-
-    # for event in events:
-    #     event_data = {
-    #         'token': event.token,
-    #         'session': event.session,
-    #         'user_login': event.user_login,
-    #         'user_id': event.user_id,
-    #         'click_time': event.click_time.isoformat(),
-    #         'user_regd': event.user_regd,
-    #         'event_type': event.event_type,
-    #         'event_name': event.event_name,
-    #         'source_url': event.source_url,
-    #         'app_name': event.app_name,
-    #         'click_text': event.click_text,
-    #         'product_id': event.product_id,
-    #         'product_name': event.product_name,
-    #         'product_price': event.product_price,
-    #         'logged_time': event.logged_time.isoformat() if event.logged_time else None,
-    #     }
-
-    #     if event.app_name not in events_data_by_app_name:
-    #         events_data_by_app_name[event.app_name] = []
+        if event.app_name not in events_data_by_app_name:
+            events_data_by_app_name[event.app_name] = []
         
-    #     events_data_by_app_name[event.app_name].append(event_data)
+        events_data_by_app_name[event.app_name].append(event_data)
     
-    # for app_name, events_data in events_data_by_app_name.items():
-    #     update_database_chunk(start_time, end_time, app_name, events_data)
+    for app_name, events_data in events_data_by_app_name.items():
+        update_database_chunk(start_time, end_time, app_name, events_data)
 
 
 

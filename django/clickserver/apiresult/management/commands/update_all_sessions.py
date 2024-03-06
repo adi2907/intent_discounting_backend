@@ -3,7 +3,7 @@ from apiresult.models import *
 import logging
 logger = logging.getLogger(__name__)
 from datetime import datetime
-from django.clickserver.apiresult.tasks_cont import update_all_user_sessions
+from django.clickserver.apiresult.tasks import update_all_user_sessions
 
 class Command(BaseCommand):
     help = 'Update all user sessions'
