@@ -1,5 +1,5 @@
 from pathlib import Path
-from apiresult.config import TIME_CHUNK
+from apiresult.utils.config import TIME_CHUNK
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
