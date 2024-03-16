@@ -10,12 +10,13 @@ logger = logging.getLogger(__name__)
 class Command(BaseCommand):
     help = 'Calculate thresholds for sale notification'
     def handle(self, *args, **kwargs):
-        # get all apps
         app_list = Event.objects.values_list('app_name', flat=True).distinct()
         for app_name in app_list:
             #get all sessions for app in last 7 days
             sessions = Sessions.objects.filter(app_name=app_name,logged_time__gte=datetime.now()-timedelta(days=7)).select_related('user')
             df_sessions = pd.DataFrame(list(sessions.values('user__token', 'logged_time', 'events_count', 'total_products_visited', 'page_load_count', 'session_duration', 'has_purchased')))
+            if df_sessions.empty:
+                continue
             logger.info("Calculating thresholds for app %s" % app_name)
             logger.info(df_sessions.head(5))
             df_sessions.rename(columns={'user__token': 'user_token'}, inplace=True)
