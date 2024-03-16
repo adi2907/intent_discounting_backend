@@ -9,17 +9,12 @@ logger = logging.getLogger(__name__)
 class Command(BaseCommand):
     help = 'Update user sessions for a specified date range'
 
+
     def handle(self, *args, **options):
-        start_date = datetime(2024, 3, 7).date()  # 10th march
-        end_date = datetime(2024, 3, 10).date()  # 15th march
-
-        logger.info(f"Updating user sessions from {start_date} to {end_date}")
-
+        logger.info("Updating user sessions")
         # Get active sessions for the specified date range
         active_sessions = Sessions.objects.filter(
             is_active=True,
-            logged_time__date__gte=start_date,
-            logged_time__date__lte=end_date
         ).order_by('id')
 
         for session in active_sessions:
@@ -56,4 +51,4 @@ class Command(BaseCommand):
 
                 user.save()
 
-        logger.info("User sessions update completed")
+        
