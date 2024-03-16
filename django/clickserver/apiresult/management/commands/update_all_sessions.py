@@ -14,7 +14,7 @@ class Command(BaseCommand):
         logger.info("Updating all user sessions")
         
          # Get all active sessions
-        active_sessions = Sessions.objects.filter(is_active=True)
+        active_sessions = Sessions.objects.filter(is_active=True).order_by('id')
         current_time = datetime.now()
         # Create a paginator with a chunk size of 1000
         paginator = Paginator(active_sessions, 1000)
