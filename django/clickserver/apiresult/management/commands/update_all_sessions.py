@@ -11,7 +11,8 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         # change is_active to false if session last logged time is more than SESSION_IDLE_TIME (1 hour)
         logger.info("Updating all user sessions")
-        sessions = Sessions.objects.filter(is_active=True)
+        two_hours_ago = datetime.now() - timedelta(hours=2)
+        sessions = Sessions.objects.filter(is_active=True, logged_time__gte=two_hours_ago)
         current_time = datetime.now()
         for session in sessions:
             if (current_time - session.session_end).total_seconds() > (SESSION_IDLE_TIME*60):
