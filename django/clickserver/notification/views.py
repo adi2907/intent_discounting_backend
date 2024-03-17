@@ -99,9 +99,23 @@ class SaleNotificationView(APIView):
             except SaleNotificationThreshold.DoesNotExist:
                 logger.info("Error in sale notification: threshold not found for app_name: %s" % app_name)
                 return Response({'error': 'threshold not found'})
+            
+        # log the threshold values
+        logger.info("Threshold values for app_name: %s" % app_name)
+        logger.info(f"events_count_threshold: {threshold.events_count_threshold}")
+        logger.info(f"page_load_count_threshold: {threshold.page_load_count_threshold}")
+        logger.info(f"total_products_visited_threshold: {threshold.total_products_visited_threshold}")
+        
+
+        # log the session values
+        logger.info("Session values for app_name: %s" % app_name)
+        logger.info(f"events_count: {session.events_count}")
+        logger.info(f"page_load_count: {session.page_load_count}")
+        logger.info(f"total_products_visited: {session.total_products_visited}")
+         
         if session.events_count >= threshold.events_count_threshold or \
-           session.page_load_count >= threshold.page_load_count_threshold or \
-           session.total_products_visited >= threshold.total_products_visited_threshold:
+        session.page_load_count >= threshold.page_load_count_threshold or \
+        session.total_products_visited >= threshold.total_products_visited_threshold:
             return Response({'sale_notification': True})
         
         return Response({'sale_notification': False})
