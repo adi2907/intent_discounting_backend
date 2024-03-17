@@ -9,26 +9,41 @@ logger = logging.getLogger(__name__)
 
 class Command(BaseCommand):
     help = 'Calculate thresholds for sale notification'
+
     def handle(self, *args, **kwargs):
         app_list = Event.objects.values_list('app_name', flat=True).distinct()
         for app_name in app_list:
-            #get all sessions for app in last 7 days
-            sessions = Sessions.objects.filter(app_name=app_name,logged_time__gte=datetime.now()-timedelta(days=7)).select_related('user')
+            # Get non-active sessions for the app in the last 7 days
+            sessions = Sessions.objects.filter(app_name=app_name, is_active=False, logged_time__gte=datetime.now()-timedelta(days=7)).select_related('user')
             df_sessions = pd.DataFrame(list(sessions.values('user__token', 'logged_time', 'events_count', 'total_products_visited', 'page_load_count', 'session_duration', 'has_purchased')))
             if df_sessions.empty:
                 continue
+
             logger.info("Calculating thresholds for app %s" % app_name)
+
+            total_rows = len(df_sessions)
+            
+            # Drop rows with null values in the threshold fields
+            threshold_fields = ['events_count', 'total_products_visited', 'page_load_count', 'session_duration']
+            df_sessions.dropna(subset=threshold_fields, inplace=True)
+
+            dropped_rows = total_rows - len(df_sessions)
+            logger.info(f"Dropped {dropped_rows} rows out of {total_rows} total rows for app {app_name}")
+
+            if df_sessions.empty:
+                logger.info(f"No valid sessions found for app {app_name} after dropping null values")
+                continue
+
             logger.info(df_sessions.head(5))
             df_sessions.rename(columns={'user__token': 'user_token'}, inplace=True)
 
-            threshold_fields = ['events_count','total_products_visited','page_load_count','session_duration']
-            # get 75%ile,80%ile,85%ile,90%ile for each threshold field
+            # Get 75%ile, 80%ile, 85%ile, 90%ile for each threshold field
             thresholds = {}
             for field in threshold_fields:
                 thresholds[field] = {}
-                for percentile in [75,80,85,90]:
+                for percentile in [75, 80, 85, 90]:
                     thresholds[field][percentile] = df_sessions[field].quantile(percentile/100)
-            
+
             df_sessions.sort_values(by=['user_token', 'logged_time'], inplace=True)
             df_sessions['has_purchased_int'] = df_sessions['has_purchased'].astype(int)
 
@@ -49,19 +64,19 @@ class Command(BaseCommand):
                 combined_filter = (df_sessions[threshold_fields[0]] > thresholds[threshold_fields[0]][percentile])
                 for field in threshold_fields[1:]:
                     combined_filter &= (df_sessions[field] > thresholds[field][percentile])
-                
+
                 # Apply the filter to df_sessions to get the subset for this percentile
                 df_percentile = df_sessions[combined_filter]
-                
+
                 # Number of purchase sessions
                 purchase_sessions = df_percentile[df_percentile['has_purchased'] == 1].shape[0]
-                
+
                 # Number of purchase sessions with purchase in the last 4 sessions
                 purchase_sessions_recent = df_percentile[(df_percentile['has_purchased'] == 1) & (df_percentile['purchase_last_4_sessions'] == 1)].shape[0]
-                
+
                 # Calculate the ratio if there are any purchase sessions, otherwise set to 0
                 ratio = (purchase_sessions_recent / purchase_sessions) * 100 if purchase_sessions else 0
-                
+
                 # Store the ratio for the current percentile
                 purchase_ratio_by_percentile[percentile] = ratio
 
@@ -69,6 +84,7 @@ class Command(BaseCommand):
             selected_percentile = max(purchase_ratio_by_percentile, key=purchase_ratio_by_percentile.get)
             selected_thresholds = {field: int(round(thresholds[field][selected_percentile])) for field in threshold_fields}
             logger.info("Selected percentiles for app %s: %s" % (app_name, selected_thresholds))
+            
             # Save the selected thresholds to the database
             threshold, created = SaleNotificationThreshold.objects.get_or_create(app_name=app_name)
             threshold.events_count = selected_thresholds['events_count']
@@ -76,24 +92,3 @@ class Command(BaseCommand):
             threshold.page_load_count = selected_thresholds['page_load_count']
             threshold.session_duration = selected_thresholds['session_duration']
             threshold.save()
-
-
-            
-
-
-
-
-            
-
-
-                
-
-
-            
-
-
-
-            
-
-            
-
