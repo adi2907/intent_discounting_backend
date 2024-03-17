@@ -84,7 +84,7 @@ class Command(BaseCommand):
             selected_percentile = max(purchase_ratio_by_percentile, key=purchase_ratio_by_percentile.get)
             selected_thresholds = {field: int(round(thresholds[field][selected_percentile])) for field in threshold_fields}
             logger.info("Selected percentiles for app %s: %s" % (app_name, selected_thresholds))
-            
+            logger.info("Purchase ratio by percentile for app %s: %s" % (app_name, purchase_ratio_by_percentile))
             # Save the selected thresholds to the database
             threshold, created = SaleNotificationThreshold.objects.get_or_create(app_name=app_name)
             threshold.events_count_threshold = selected_thresholds['events_count']
