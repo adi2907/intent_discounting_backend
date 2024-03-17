@@ -87,8 +87,8 @@ class Command(BaseCommand):
             
             # Save the selected thresholds to the database
             threshold, created = SaleNotificationThreshold.objects.get_or_create(app_name=app_name)
-            threshold.events_count = selected_thresholds['events_count']
-            threshold.total_products_visited = selected_thresholds['total_products_visited']
-            threshold.page_load_count = selected_thresholds['page_load_count']
-            threshold.session_duration = selected_thresholds['session_duration']
+            threshold.events_count_threshold = selected_thresholds['events_count']
+            threshold.total_products_visited_threshold = selected_thresholds['total_products_visited']
+            threshold.page_load_count_threshold = selected_thresholds['page_load_count']
+            threshold.session_duration_threshold = selected_thresholds['session_duration']
             threshold.save()

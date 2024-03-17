@@ -3,6 +3,8 @@ from django.http import JsonResponse
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 from apiresult.models import *
+from notification.models import *
+from django.core.cache import cache
 import json
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -79,16 +81,29 @@ class SaleNotificationView(APIView):
 
         if user.purchase_last_4_sessions == 1:
             return Response({'sale_notification': False})
-        else:
-            if session.events_count is None or \
+        if session.events_count is None or \
                 session.page_load_count is None or \
                 session.total_products_visited is None:
                     return Response({'error': 'One or more session parameters are None'})
+        
+         # Check if the threshold values are already in cache
+        cache_key = f'sale_notification_threshold_{app_name}'
+        threshold = cache.get(cache_key)
 
-            if session.events_count >= TOTAL_COUNT_THRESHOLD or \
-                session.page_load_count >= PL_COUNT_THRESHOLD or \
-                    session.total_products_visited >= TOTAL_PRODUCTS_THRESHOLD: #session.session_duration >= SESSION_DURATION_THRESHOLD or \
-                return Response({'sale_notification': True})
+        if threshold is None:
+            # Threshold values not found in cache, fetch from the database
+            try:
+                threshold = SaleNotificationThreshold.objects.get(app_name=app_name)
+                # Store the threshold values in cache for future use
+                cache.set(cache_key, threshold, timeout=3600)  # Cache for 1 hour (adjust as needed)
+            except SaleNotificationThreshold.DoesNotExist:
+                logger.info("Error in sale notification: threshold not found for app_name: %s" % app_name)
+                return Response({'error': 'threshold not found'})
+        if session.events_count >= threshold.events_count_threshold or \
+           session.page_load_count >= threshold.page_load_count_threshold or \
+           session.total_products_visited >= threshold.total_products_visited_threshold:
+            return Response({'sale_notification': True})
+        
         return Response({'sale_notification': False})
 
    
