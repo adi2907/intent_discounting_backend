@@ -1,4 +1,5 @@
 from django.db import models
+from apiresult.models import IdentifiedUser
 
 
 class SaleNotificationThreshold(models.Model):
@@ -15,3 +16,13 @@ class SaleNotificationThreshold(models.Model):
     session_duration_threshold = models.FloatField(null=True) # in seconds
     logged_time = models.DateTimeField(auto_now_add=True,null=True,db_index=True)
     
+class IdentifiedUserNotificationThreshold(models.Model):
+    app_name = models.CharField(max_length=255,null=True,db_index=True)
+    session_duration_75 = models.FloatField(null=True)
+    total_products_visited_75 = models.IntegerField(null=True)
+    logged_time = models.DateTimeField(auto_now_add=True,null=True,db_index=True)
+
+class IdentifiedUserNotification(models.Model):
+    identified_user = models.ForeignKey(IdentifiedUser, on_delete=models.CASCADE)
+    app_name = models.CharField(max_length=255,null=True,db_index=True)
+    conversion_prob = models.BooleanField(null=True)
