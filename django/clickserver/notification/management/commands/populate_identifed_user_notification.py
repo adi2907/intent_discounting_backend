@@ -3,7 +3,7 @@ from django.db import connection
 from datetime import datetime, timedelta
 from django.core.management.base import BaseCommand
 from apiresult.models import *
-from .models import IdentifiedUserNotificationThreshold, IdentifiedUserNotification
+from notification.models import *
 
 class Command(BaseCommand):
     help = 'Populate identified user notification'
