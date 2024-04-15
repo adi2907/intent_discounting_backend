@@ -25,6 +25,7 @@ class Event(models.Model):
     class Meta:
         db_table = 'event_raw'
 
+
 # create purchase model
 class ShopifyPurchase(models.Model):
     cart_token = models.CharField(max_length=255,db_index=True)
