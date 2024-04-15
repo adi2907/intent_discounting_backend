@@ -3,7 +3,7 @@ from django.db import models
 # create event model
 class Event(models.Model):
     token = models.CharField(max_length=255,db_index=True)
-    session = models.TextField()
+    session = models.CharField(max_length=255,db_index=True)
     user_login = models.TextField(null=True)
     user_id = models.TextField(null=True)
     # click time is datetime field with format 'yyyy-mm-dd hh:mm:ss'
@@ -20,7 +20,7 @@ class Event(models.Model):
     product_name = models.CharField(max_length=255, null=True,db_index=True)
     product_price = models.TextField(null=True)
     # add logged time, default is null
-    logged_time = models.DateTimeField(null=True)
+    logged_time = models.DateTimeField(null=True,db_index=True)
 
     class Meta:
         db_table = 'event_raw'

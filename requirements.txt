@@ -17,7 +17,7 @@ greenlet==2.0.2
 kombu==5.2.4
 mysql-connector-python==8.0.29
 mysql-to-sqlite3==1.4.14
-mysqlclient==2.1.1
+mysqlclient
 numpy==1.24.1
 openpyxl==3.1.2
 pandas==2.0.3
