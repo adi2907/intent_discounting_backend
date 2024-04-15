@@ -98,10 +98,9 @@ DATABASES = {
             # 'PORT':'3306',
             
             # 'NAME':'events',
-            # 'USER':'new_user',
-            # 'PASSWORD':'Circuit@123',
+            # 'USER':'localuser',
+            # 'PASSWORD':'password',
             # #ip address of the database
-            # 'HOST':'3.6.225.178',
             # 'HOST':'localhost',
             # 'PORT':'3306',
             },
@@ -121,7 +120,7 @@ LOGGING = {
             'level': 'INFO',
             'class': 'logging.FileHandler',
             'filename': '/home/ubuntu/clickstream/django/clickserver/logs/info.log', 
-            #'filename': '/Users/adityaganguli/Documents/Technew/clickstream-server/django/clickserver/logs/info.log',
+            #'filename': '/Users/adityaganguli/alme/staging/clickstream_server/django/clickserver/logs/info.log',
             'formatter': 'standard',
         },
     },
