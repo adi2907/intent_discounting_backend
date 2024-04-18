@@ -9,5 +9,6 @@ urlpatterns = [
     path('api/', include('apiresult.urls')),
     path('notification/', include('notification.urls')),
     path('analytics/', include('analytics.urls')),
+    path('segments/', include('segments.urls')),
     path('api-auth/', include('rest_framework.urls')),
 ]

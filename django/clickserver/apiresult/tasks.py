@@ -145,16 +145,27 @@ def update_identified_user_details(user_events, user, app_name):
     if userid_events:
         # Assuming the latest user_id is the most relevant
         latest_userid_event = max(userid_events, key=lambda event: event['click_time'])
-        user.registered_user_id = latest_userid_event['user_id']
-        user.user_login = latest_userid_event.get('user_login')
-        user.save()
+        registered_user_id = latest_userid_event['user_id']
+        user_login = latest_userid_event.get('user_login')
 
-        # Update or create the IdentifiedUser instance
-        IdentifiedUser.objects.update_or_create(
+        # Get the IdentifiedUser instance or create a new one if it doesn't exist
+        identified_user, created = IdentifiedUser.objects.get_or_create(
             registered_user_id=user.registered_user_id,
             app_name=app_name,
             defaults={'tokens': [user.token]}
         )
+        # If the IdentifiedUser instance already exists, append the token to the tokens field
+        if not created:
+            # Ensure the token is not already in the list
+            if user.token not in identified_user.tokens:
+                identified_user.tokens.append(user.token)
+                identified_user.save()
+
+        user.registered_user_id = registered_user_id
+        user.user_login = user_login
+        user.identified_user = identified_user
+        user.save()
+
 
 @shared_task
 def update_sessions(session_keys, events_data, app_name):

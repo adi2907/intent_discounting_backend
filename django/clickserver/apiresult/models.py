@@ -18,7 +18,8 @@ class Item(models.Model):
 class User(models.Model):
     token = models.CharField(max_length=255,db_index=True)
     user_login = models.TextField(null=True)
-    registered_user_id = models.CharField(max_length=255,null=True) # TODO: Link this as foreign key to IdentifiedUser
+    registered_user_id = models.CharField(max_length=255,null=True)
+    identified_user = models.ForeignKey('IdentifiedUser', on_delete=models.CASCADE,null=True)
     app_name = models.CharField(max_length=255,null=True,db_index=True)
     # date time of last visit
     last_visit = models.DateTimeField()

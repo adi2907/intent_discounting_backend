@@ -31,14 +31,11 @@ class CartSerializer(serializers.ModelSerializer):
 class IdentifiedUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = IdentifiedUser
-        fields = '__all__'
+        # exclude tokens field
+        fields = ['id','registered_user_id','app_name','phone','email','name']
 
 class MostVisitedSerializer(serializers.ModelSerializer):
     class Meta:
         model = Item
         fields = ['product_id','num_visits']
 
-class UserSummarySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = UserSummary,
-        fields = ['user_token', 'last_visited', 'last_carted','recommended']

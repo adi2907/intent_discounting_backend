@@ -146,16 +146,26 @@ def update_identified_user_details(user_events, user, app_name):
     if userid_events:
         # Assuming the latest user_id is the most relevant
         latest_userid_event = max(userid_events, key=lambda event: event['click_time'])
-        user.registered_user_id = latest_userid_event['user_id']
-        user.user_login = latest_userid_event.get('user_login')
-        user.save()
+        registered_user_id = latest_userid_event['user_id']
+        user_login = latest_userid_event.get('user_login')
 
-        # Update or create the IdentifiedUser instance
-        IdentifiedUser.objects.update_or_create(
+        # Get the IdentifiedUser instance or create a new one if it doesn't exist
+        identified_user, created = IdentifiedUser.objects.get_or_create(
             registered_user_id=user.registered_user_id,
             app_name=app_name,
             defaults={'tokens': [user.token]}
         )
+        # If the IdentifiedUser instance already exists, append the token to the tokens field
+        if not created:
+            # Ensure the token is not already in the list
+            if user.token not in identified_user.tokens:
+                identified_user.tokens.append(user.token)
+                identified_user.save()
+
+        user.registered_user_id = registered_user_id
+        user.user_login = user_login
+        user.identified_user = identified_user
+        user.save()
 
 @shared_task
 def update_sessions(session_keys, events_data, app_name):
@@ -346,8 +356,8 @@ def update_database_chunk(start_time, end_time, app_name, events_data):
 
 @shared_task
 def update_database():   
-    chunk_start_time = cache.get('last_chunk_start_time', datetime(2024, 2, 1, 0, 0, 0))
-    chunk_end_time = chunk_start_time + timedelta(minutes=30)
+    chunk_start_time = cache.get('last_chunk_start_time', datetime(2024, 4, 12, 0, 0, 0))
+    chunk_end_time = chunk_start_time + timedelta(minutes=360)
 
 
     # Fetch events within the current chunk
@@ -384,9 +394,9 @@ def update_database():
             update_database_chunk.apply_async((chunk_start_time, chunk_end_time, app_name, events_data))
             
     # Move to the next chunk
-    next_chunk_start_time = chunk_start_time + timedelta(minutes=30)
+    next_chunk_start_time = chunk_start_time + timedelta(minutes=360)
     cache.set('last_chunk_start_time', next_chunk_start_time, None)  # None for no timeout on cache
-    if next_chunk_start_time >= datetime(2024, 2, 29, 23, 59, 59):
+    if next_chunk_start_time >= datetime(2024, 4, 13, 18, 0, 0):
         logger.info("All events processed")
         return
     

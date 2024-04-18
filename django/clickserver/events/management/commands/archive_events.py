@@ -29,10 +29,10 @@ class Command(BaseCommand):
                 EventArchive.objects.bulk_create(bulk_insert[i:i+batch_size])
 
         # Batch delete from the original table
-            batch_size = 1000
-            event_ids = list(events_to_archive.values_list('id', flat=True)) 
-            for i in range(0, len(event_ids), batch_size):
-                with transaction.atomic():
-                    Event.objects.filter(id__in=event_ids[i:i+batch_size]).delete()
+        batch_size = 1000
+        event_ids = list(events_to_archive.values_list('id', flat=True)) 
+        for i in range(0, len(event_ids), batch_size):
+            with transaction.atomic():
+                Event.objects.filter(id__in=event_ids[i:i+batch_size]).delete()
 
         logger.info("Events archived successfully on {datetime.now()}")
