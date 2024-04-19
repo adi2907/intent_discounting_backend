@@ -10,10 +10,16 @@ class Command(BaseCommand):
         users = IdentifiedUser.objects.filter(app_name='millet-amma-store.myshopify.com', email__isnull=True, name__isnull=True, phone__isnull=True)
         initial_count = users.count()
         updated_count = 0
+        skipped_count = 0
 
         self.stdout.write(f"Starting to update details for {initial_count} users.")
 
         for user in users:
+            if not user.registered_user_id:
+                self.stdout.write(self.style.WARNING(f"Skipping update for user with None ID."))
+                skipped_count += 1
+                continue
+
             url = f"https://almeapp.co.in/mapCustomer?shop_name=millet-amma-store.myshopify.com&customer_id={user.registered_user_id}"
             self.stdout.write(f"Requesting details for user ID {user.registered_user_id} from URL: {url}")
 
@@ -27,7 +33,7 @@ class Command(BaseCommand):
 
                 data = response.json()
 
-                if data and data.get('status') and 'customer' in data['response']:
+                if data and data.get('status') and data['response'] and 'customer' in data['response']:
                     customer = data['response']['customer']
                     email = customer.get('email')
                     first_name = customer.get('first_name')
@@ -52,3 +58,4 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS(f"Total users processed: {initial_count}"))
         self.stdout.write(self.style.SUCCESS(f"Total users updated: {updated_count}"))
+        self.stdout.write(self.style.SUCCESS(f"Total users skipped due to invalid IDs: {skipped_count}"))
