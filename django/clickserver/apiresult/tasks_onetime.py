@@ -141,7 +141,8 @@ def update_individual_user_activities(user_token, events_data, app_name):
     connections.close_all()
 
 def update_identified_user_details(user_events, user, app_name):
-    userid_events = [event for event in user_events if event.get('user_id')]
+    # get only events which have non empty user_id
+    userid_events = [event for event in user_events if event.get('user_id') and event.get('user_id').strip()]
     
     if userid_events:
         # Assuming the latest user_id is the most relevant
@@ -151,7 +152,7 @@ def update_identified_user_details(user_events, user, app_name):
 
         # Get the IdentifiedUser instance or create a new one if it doesn't exist
         identified_user, created = IdentifiedUser.objects.get_or_create(
-            registered_user_id=user.registered_user_id,
+            registered_user_id=registered_user_id,
             app_name=app_name,
             defaults={'tokens': [user.token]}
         )

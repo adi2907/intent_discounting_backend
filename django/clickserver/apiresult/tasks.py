@@ -150,7 +150,7 @@ def update_identified_user_details(user_events, user, app_name):
 
         # Get the IdentifiedUser instance or create a new one if it doesn't exist
         identified_user, created = IdentifiedUser.objects.get_or_create(
-            registered_user_id=user.registered_user_id,
+            registered_user_id=registered_user_id,
             app_name=app_name,
             defaults={'tokens': [user.token]}
         )
