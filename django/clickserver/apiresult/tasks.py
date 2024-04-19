@@ -140,8 +140,9 @@ def update_individual_user_activities(user_token, events_data, app_name):
     connections.close_all()
 
 def update_identified_user_details(user_events, user, app_name):
-    userid_events = [event for event in user_events if event.get('user_id')]
-    
+    # get only events which have non empty user_id
+    userid_events = [event for event in user_events if event.get('user_id') and event.get('user_id').strip()]
+
     if userid_events:
         # Assuming the latest user_id is the most relevant
         latest_userid_event = max(userid_events, key=lambda event: event['click_time'])
