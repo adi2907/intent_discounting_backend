@@ -30,7 +30,11 @@ from apiresult.serializers import UserSerializer,IdentifiedUserSerializer
     JSON object containing an array of identified users with their details.
 
     Example Request:
-     https://almeapp.com/segments/identified-users-list?app_name=almestore1.myshopify.com&action=purchase&last_x_days=7
+    https://almeapp.com/segments/identified-users-list?app_name=almestore1.myshopify.com&action=purchase&last_x_days=7
+    https://almeapp.com/segments/identified-users-list?app_name=almestore1.myshopify.com&action=cart&before_x_days=7
+    https://almeapp.com/segments/identified-users-list?app_name=almestore1.myshopify.com&action=purchase&yesterday=true
+    https://almeapp.com/segments/identified-users-list?app_name=almestore1.myshopify.com&action=purchase&today=true
+
 
     Response Format:
     {
@@ -67,10 +71,10 @@ class IdentifiedUsersListView(APIView):
         if last_x_days and before_x_days:
             return Response({"error":"last_x_days and before_x_days parameters are mutually exclusive."},status=400)
         
-        if yesterday:
+        if yesterday == 'true':
             start_date = (datetime.now() - timedelta(days=1)).replace(hour=0, minute=0, second=0)
             end_date = (datetime.now() - timedelta(days=1)).replace(hour=23, minute=59, second=59)
-        elif today:
+        elif today == 'true':
             start_date = datetime.now().replace(hour=0, minute=0, second=0)
             end_date = datetime.now().replace(hour=23, minute=59, second=59)
         elif last_x_days:
