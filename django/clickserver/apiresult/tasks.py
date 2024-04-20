@@ -153,14 +153,20 @@ def update_identified_user_details(user_events, user, app_name):
         identified_user, created = IdentifiedUser.objects.get_or_create(
             registered_user_id=registered_user_id,
             app_name=app_name,
-            defaults={'tokens': [user.token]}
+            defaults={
+                'created_at': latest_userid_event['click_time'],  # Set at creation time
+                'last_visit': latest_userid_event['click_time'],  # Set at creation time
+                'tokens': [user.token]  # Initialize tokens at creation time
+            }
         )
         # If the IdentifiedUser instance already exists, append the token to the tokens field
         if not created:
-            # Ensure the token is not already in the list
+            # Only update if necessary to prevent unnecessary database hits
             if user.token not in identified_user.tokens:
                 identified_user.tokens.append(user.token)
-                identified_user.save()
+                identified_user.tokens = identified_user.tokens  # Reassign to trigger update
+            identified_user.last_visit = latest_userid_event['click_time']
+            identified_user.save()
 
         user.registered_user_id = registered_user_id
         user.user_login = user_login

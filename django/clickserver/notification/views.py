@@ -9,6 +9,7 @@ import json
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from apiresult.utils.config import *
+from datetime import datetime
 
 import logging
 logger = logging.getLogger(__name__)
@@ -20,6 +21,7 @@ class SubmitContactView(APIView):
         alme_user_token = data.get('alme_user_token')
         phone = data.get('phone')
         name = data.get('name')
+        email = data.get('email', '')
         
         i_users = IdentifiedUser.objects.filter(app_name=app_name)
         i_user = None
@@ -31,13 +33,18 @@ class SubmitContactView(APIView):
             # user found, update name, email and phone number for IdentifiedUser
             i_user.name = name
             i_user.phone = phone
+            i_user.email = email
+            i_user.last_visit = datetime.now()
         else:
             # create new IdentifiedUser
             i_user = IdentifiedUser(
                 app_name=app_name,
                 name=name,
                 phone=phone,
-                tokens=[alme_user_token]
+                email=email,
+                tokens=[alme_user_token],
+                created_at=datetime.now(),
+                last_visit=datetime.now()
             )
         # try saving user else return error response
         try:

@@ -71,6 +71,8 @@ class IdentifiedUser(models.Model):
     email = models.EmailField(null=True)
     name = models.CharField(max_length=255, null=True)
     tokens = models.JSONField(null=True)
+    created_at = models.DateTimeField(null=True,db_index=True)
+    last_visit = models.DateTimeField(null=True,db_index=True)
     logged_time = models.DateTimeField(auto_now_add=True,null=True)
     class Meta:
         unique_together = ('registered_user_id', 'app_name')
