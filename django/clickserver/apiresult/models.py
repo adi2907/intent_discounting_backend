@@ -73,6 +73,7 @@ class IdentifiedUser(models.Model):
     tokens = models.JSONField(null=True)
     created_at = models.DateTimeField(null=True,db_index=True)
     last_visit = models.DateTimeField(null=True,db_index=True)
+    shopify_update = models.BooleanField(default=False)
     logged_time = models.DateTimeField(auto_now_add=True,null=True)
     class Meta:
         unique_together = ('registered_user_id', 'app_name')

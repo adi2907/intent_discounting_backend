@@ -502,6 +502,7 @@ class IdentifiedUserActivityView(APIView):
         user_activity_summary = []
         serial_number = 1
 
+
         identified_users = IdentifiedUser.objects.filter(app_name=app_name,
             logged_time__gte=start_of_day, 
             logged_time__lte=end_of_day)
@@ -521,9 +522,10 @@ class IdentifiedUserActivityView(APIView):
             }
 
             for token in tokens:
-                user_data['visited'] += Visits.objects.filter(user__token=token, app_name=app_name).count()
-                user_data['added_to_cart'] += Cart.objects.filter(user__token=token, app_name=app_name).count()
-                user_data['purchased'] += Purchase.objects.filter(user__token=token, app_name=app_name).count()
+                # get visits during the specified date range
+                user_data['visited'] += Visits.objects.filter(user__token=token, app_name=app_name, created_at__gte=start_of_day, created_at__lte=end_of_day).count()
+                user_data['added_to_cart'] += Cart.objects.filter(user__token=token, app_name=app_name, created_at__gte=start_of_day, created_at__lte=end_of_day).count()
+                user_data['purchased'] += Purchase.objects.filter(user__token=token, app_name=app_name, created_at__gte=start_of_day, created_at__lte=end_of_day).count()
 
             user_activity_summary.append(user_data)
             serial_number += 1
