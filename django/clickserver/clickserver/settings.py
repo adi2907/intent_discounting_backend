@@ -119,8 +119,8 @@ LOGGING = {
         'file': {
             'level': 'INFO',
             'class': 'logging.FileHandler',
-            #'filename': '/home/ubuntu/clickstream/django/clickserver/logs/info.log', 
-            'filename': '/Users/adityaganguli/alme/staging/clickstream_server/django/clickserver/logs/info.log',
+            'filename': '/home/ubuntu/clickstream/django/clickserver/logs/info.log', 
+            #'filename': '/Users/adityaganguli/alme/staging/clickstream_server/django/clickserver/logs/info.log',
             'formatter': 'standard',
         },
     },
