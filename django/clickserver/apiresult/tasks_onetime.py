@@ -403,7 +403,7 @@ def update_database():
     # Move to the next chunk
     next_chunk_start_time = chunk_start_time + timedelta(minutes=360)
     cache.set('last_chunk_start_time', next_chunk_start_time, None)  # None for no timeout on cache
-    if next_chunk_start_time >= datetime(2024, 4, 13, 18, 0, 0):
+    if next_chunk_start_time >= datetime(2024, 4, 20, 23, 59, 59):
         logger.info("All events processed")
         return
     

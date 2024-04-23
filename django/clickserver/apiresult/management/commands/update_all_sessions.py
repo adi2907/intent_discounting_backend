@@ -1,5 +1,6 @@
 from django.core.management.base import BaseCommand
 from datetime import datetime, timedelta
+from django.core.paginator import Paginator
 from apiresult.models import Sessions
 from apiresult.utils.config import *
 import logging
@@ -16,39 +17,43 @@ class Command(BaseCommand):
         active_sessions = Sessions.objects.filter(
             is_active=True,
         ).order_by('id')
+        
+        batch_size = 1000
+        paginator = Paginator(active_sessions, batch_size)
+        for page_number in paginator.page_range:
+            page = paginator.page(page_number)
+            for session in page.object_list:
+                current_time = datetime.now()
+                if (current_time - session.session_end).total_seconds() > (SESSION_IDLE_TIME * 60):
+                    session.is_active = False
+                    session.session_duration = (session.session_end - session.session_start).total_seconds()
+                    session.save()
 
-        for session in active_sessions:
-            current_time = datetime.now()
-            if (current_time - session.session_end).total_seconds() > (SESSION_IDLE_TIME * 60):
-                session.is_active = False
-                session.session_duration = (session.session_end - session.session_start).total_seconds()
-                session.save()
+                    user = session.user
+                    previous_4_sessions = Sessions.objects.filter(user=user).order_by('-session_end')[1:5]
+                    previous_session = None
+                    if len(previous_4_sessions) >= 1:
+                        previous_session = previous_4_sessions[0]
 
-                user = session.user
-                previous_4_sessions = Sessions.objects.filter(user=user).order_by('-session_end')[1:5]
-                previous_session = None
-                if len(previous_4_sessions) >= 1:
-                    previous_session = previous_4_sessions[0]
+                    purchase_history = [session.has_purchased for session in previous_4_sessions]
+                    user.purchase_last_4_sessions = 1 if sum(purchase_history) > 0 else 0
+                    user.carted_last_4_sessions = 1 if sum([session.has_carted for session in previous_4_sessions]) > 0 else 0
 
-                purchase_history = [session.has_purchased for session in previous_4_sessions]
-                user.purchase_last_4_sessions = 1 if sum(purchase_history) > 0 else 0
-                user.carted_last_4_sessions = 1 if sum([session.has_carted for session in previous_4_sessions]) > 0 else 0
+                    if previous_session:
+                        user.purchase_prev_session = previous_session.has_purchased
 
-                if previous_session:
-                    user.purchase_prev_session = previous_session.has_purchased
+                    sessions_last_30_days = Sessions.objects.filter(
+                        user=user,
+                        logged_time__gte=current_time - timedelta(days=30)
+                    )
+                    user.num_sessions_last_30_days = len(sessions_last_30_days)
 
-                sessions_last_30_days = Sessions.objects.filter(
-                    user=user,
-                    logged_time__gte=current_time - timedelta(days=30)
-                )
-                user.num_sessions_last_30_days = len(sessions_last_30_days)
+                    sessions_last_7_days = Sessions.objects.filter(
+                        user=user,
+                        logged_time__gte=current_time - timedelta(days=7)
+                    )
+                    user.num_sessions_last_7_days = len(sessions_last_7_days)
 
-                sessions_last_7_days = Sessions.objects.filter(
-                    user=user,
-                    logged_time__gte=current_time - timedelta(days=7)
-                )
-                user.num_sessions_last_7_days = len(sessions_last_7_days)
-
-                user.save()
+                    user.save()
 
         

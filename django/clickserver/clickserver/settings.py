@@ -97,7 +97,7 @@ DATABASES = {
             # 'HOST':'localhost',
             # 'PORT':'3306',
             
-            # 'NAME':'events',
+            # 'NAME':'events_replica',
             # 'USER':'localuser',
             # 'PASSWORD':'password',
             # #ip address of the database
@@ -119,8 +119,8 @@ LOGGING = {
         'file': {
             'level': 'INFO',
             'class': 'logging.FileHandler',
-            'filename': '/home/ubuntu/clickstream/django/clickserver/logs/info.log', 
-            #'filename': '/Users/adityaganguli/alme/staging/clickstream_server/django/clickserver/logs/info.log',
+            #'filename': '/home/ubuntu/clickstream/django/clickserver/logs/info.log', 
+            'filename': '/Users/adityaganguli/alme/staging/clickstream_server/django/clickserver/logs/info.log',
             'formatter': 'standard',
         },
     },
