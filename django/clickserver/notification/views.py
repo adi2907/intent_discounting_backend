@@ -31,9 +31,9 @@ class SubmitContactView(APIView):
                 break
         if i_user:
             # user found, update name, email and phone number for IdentifiedUser
-            i_user.name = name
-            i_user.phone = phone
-            i_user.email = email
+            i_user.name = i_user.name or name
+            i_user.phone = i_user.phone or phone
+            i_user.email = i_user.email or email
             i_user.last_visit = datetime.now()
         else:
             # create new IdentifiedUser
@@ -46,14 +46,27 @@ class SubmitContactView(APIView):
                 created_at=datetime.now(),
                 last_visit=datetime.now()
             )
+            
+
         # try saving user else return error response
         try:
             i_user.save()
-            return Response({"status": "success"}, status=200)
         except Exception as e:
             logger.info("Error in sending Alme contact details: %s" % str(e))
             return Response({"Error in sending Alme contact details": str(e)})
 
+        user,created = User.objects.get_or_create(
+            app_name=app_name,
+            defaults={
+                'token': alme_user_token,
+                'last_visit': datetime.now(),
+                'created_at': datetime.now(),
+                'last_updated': datetime.now(),
+            }
+        )
+        user.identified_user_id = i_user.id
+        user.save()
+        return Response({"status": "success"}, status=200)
 
 class SaleNotificationView(APIView):
     def get(self,request):
