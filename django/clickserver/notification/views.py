@@ -57,8 +57,8 @@ class SubmitContactView(APIView):
 
         user,created = User.objects.get_or_create(
             app_name=app_name,
+            token = alme_user_token,
             defaults={
-                'token': alme_user_token,
                 'last_visit': datetime.now(),
                 'created_at': datetime.now(),
                 'last_updated': datetime.now(),

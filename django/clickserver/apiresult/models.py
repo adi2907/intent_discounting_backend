@@ -33,6 +33,9 @@ class User(models.Model):
     purchase_prev_session = models.IntegerField(null=True)
     num_sessions_last_30_days = models.IntegerField(null=True)
     num_sessions_last_7_days = models.IntegerField(null=True)
+
+    class Meta:
+        unique_together = ('token', 'app_name')
     
     
 class Purchase(models.Model):
