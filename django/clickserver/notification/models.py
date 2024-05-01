@@ -26,3 +26,18 @@ class IdentifiedUserNotification(models.Model):
     identified_user = models.ForeignKey(IdentifiedUser, on_delete=models.CASCADE)
     app_name = models.CharField(max_length=255,null=True,db_index=True)
     conversion_prob = models.BooleanField(null=True)
+
+
+# TODO: Few optional critieria only to be kept in the backend, over and above the threshold values
+# to be developed into a full fledged feature later
+class SaleNotificationCriteria(models.Model):
+    app_name = models.CharField(max_length=255,null=True,db_index=True)
+    percentile = models.FloatField(null=True)
+    days_since_last_purchase = models.IntegerField(null=True) 
+    days_since_last_visit = models.IntegerField(null=True)
+    logged_time = models.DateTimeField(auto_now_add=True,null=True,db_index=True)
+
+    class Meta:
+        db_table = 'sale_notification_criteria'
+
+

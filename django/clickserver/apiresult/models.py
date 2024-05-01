@@ -22,7 +22,7 @@ class User(models.Model):
     identified_user = models.ForeignKey('IdentifiedUser', on_delete=models.CASCADE,null=True)
     app_name = models.CharField(max_length=255,null=True,db_index=True)
     # date time of last visit
-    last_visit = models.DateTimeField()
+    last_visit = models.DateTimeField(db_index=True)
     # date time of first visit
     first_visit = models.DateTimeField()
     last_updated = models.DateTimeField()
@@ -43,9 +43,9 @@ class Purchase(models.Model):
     item = models.ForeignKey(Item, on_delete=models.CASCADE)
     app_name = models.CharField(max_length=255,null=True,db_index=True)
     cart_token = models.CharField(max_length=255,null=True,db_index=True)
-    created_at = models.DateTimeField()
+    created_at = models.DateTimeField(db_index=True)
     quantity = models.PositiveIntegerField(null=True,default=1)
-    logged_time = models.DateTimeField(auto_now_add=True,null=True)
+    logged_time = models.DateTimeField(auto_now_add=True,null=True,db_index=True)
     
 
 class Visits(models.Model):

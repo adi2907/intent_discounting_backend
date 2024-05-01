@@ -9,7 +9,7 @@ import json
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from apiresult.utils.config import *
-from datetime import datetime
+from datetime import datetime,timedelta
 
 import logging
 logger = logging.getLogger(__name__)
@@ -120,12 +120,39 @@ class SaleNotificationView(APIView):
                 logger.info("Error in sale notification: threshold not found for app_name: %s" % app_name)
                 return Response({'error': 'threshold not found'})
             
+        # Check if there's any criteria for the user
+        cache_key = f'sale_notification_criteria_{app_name}'
+        criteria = cache.get(cache_key)
+        if criteria is None:
+            # Criteria values not found in cache, fetch from the database
+            try:
+                criteria = SaleNotificationCriteria.objects.get(app_name=app_name)
+                cache.set(cache_key, criteria, timeout=3600)
+            except SaleNotificationCriteria.DoesNotExist:
+                # set the cache_key to 0
+                cache.set(cache_key, 0, timeout=3600)
         
+        if criteria != 0:
+            # check days_since_last_purchase
+            if criteria.days_since_last_purchase is not None:
+                days_since_last_purchased = criteria.days_since_last_purchase
+                # find the last purchase date of the user
+                latest_purchase_date = Purchase.objects.filter(user=user).order_by('-created_at').first()
+                if latest_purchase_date is not None:
+                    # check if the last purchase date is within the days_since_last_purchase
+                    if (datetime.now() - latest_purchase_date.created_at).days <= days_since_last_purchased:
+                        return Response({'sale_notification': False})
+            # check days_since_last_visit
+            if criteria.days_since_last_visit is not None:
+                days_since_last_visit = criteria.days_since_last_visit
+                if (datetime.now() - user.last_visit).days <= days_since_last_visit:
+                    return Response({'sale_notification': False})
+                
         if session.events_count >= threshold.events_count_threshold or \
-        session.page_load_count >= threshold.page_load_count_threshold or \
-        session.total_products_visited >= threshold.total_products_visited_threshold:
-            logger.info("Sale notification true")
-            return Response({'sale_notification': True})
+            session.page_load_count >= threshold.page_load_count_threshold or \
+            session.total_products_visited >= threshold.total_products_visited_threshold:
+                logger.info("Sale notification true")
+                return Response({'sale_notification': True})
         
        
 
