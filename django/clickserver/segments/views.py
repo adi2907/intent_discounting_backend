@@ -20,7 +20,7 @@ from django.db.models import Count
     Parameters:
 
     app_name (required, string): The name of the app.
-    action (required, string): The action to filter the identified users. Possible values: 'purchase', 'cart', 'visit','session'.
+    action (required, string): The action to filter the identified users. Possible values: 'purchase', 'cart', 'visit','site_visit'.
     yesterday (optional, boolean): If set to true, filters the identified users for the previous day.
     today (optional, boolean): If set to true, filters the identified users for the current day.
     last_x_days (optional, integer): Filters the identified users for the last X days.
@@ -33,7 +33,7 @@ from django.db.models import Count
     Example Request:
     https://almeapp.com/segments/identified-users-list?app_name=almestore1.myshopify.com&action=purchase&last_x_days=7
     https://almeapp.com/segments/identified-users-list?app_name=almestore1.myshopify.com&action=cart&before_x_days=7
-    https://almeapp.com/segments/identified-users-list?app_name=almestore1.myshopify.com&action=purchase&yesterday=true
+    https://almeapp.com/segments/identified-users-list?app_name=almestore1.myshopify.com&action=site_visit&yesterday=true
     https://almeapp.com/segments/identified-users-list?app_name=almestore1.myshopify.com&action=purchase&today=true
 
 
@@ -64,7 +64,7 @@ class IdentifiedUsersListView(APIView):
         if not app_name and not action:
             return Response({"error":"app_name and action are required parameters."},status=400)
         
-        if action not in ['purchase','cart','visit','session']:
+        if action not in ['purchase','cart','visit','site_visit']:
             return Response({"error":"action parameter is invalid."},status=400)
         
         if yesterday and today:
@@ -109,7 +109,7 @@ class IdentifiedUsersListView(APIView):
             identified_users_with_visit = IdentifiedUser.objects.filter(id__in=identified_user_ids,app_name=app_name)
             identified_users_with_visit = identified_users_with_visit.exclude(name__isnull=True,phone__isnull=True,email__isnull=True,registered_user_id__isnull=True)
             serializer = IdentifiedUserSerializer(identified_users_with_visit,many=True)
-        elif action == 'session':
+        elif action == 'site_visit':
             users_with_session = users_with_identified_user_id.filter(session__logged_time__gte=start_date,session__logged_time__lte=end_date).distinct()
             identified_user_ids = users_with_session.values_list('identified_user',flat=True)
             identified_users_with_session = IdentifiedUser.objects.filter(id__in=identified_user_ids,app_name=app_name)
