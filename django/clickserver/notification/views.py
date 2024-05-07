@@ -100,7 +100,7 @@ class SaleNotificationView(APIView):
             return Response({'error': 'user not found'})
 
         if user.purchase_last_4_sessions == 1:
-            return Response({'sale_notification': False})
+            return Response({'sale_notification': False,'criteria_met': False})
         if session.events_count is None or \
                 session.page_load_count is None or \
                 session.total_products_visited is None:
@@ -141,12 +141,12 @@ class SaleNotificationView(APIView):
                 if latest_purchase_date is not None:
                     # check if the last purchase date is within the days_since_last_purchase
                     if (datetime.now() - latest_purchase_date.created_at).days <= days_since_last_purchased:
-                        return Response({'sale_notification': False})
+                        return Response({'sale_notification': False,'criteria_met': False})
             # check days_since_last_visit
             if criteria.days_since_last_visit is not None:
                 days_since_last_visit = criteria.days_since_last_visit
                 if (datetime.now() - user.last_visit).days <= days_since_last_visit:
-                    return Response({'sale_notification': False})
+                    return Response({'sale_notification': False,'criteria_met': False})
                 
         if session.events_count >= threshold.events_count_threshold or \
             session.page_load_count >= threshold.page_load_count_threshold or \
