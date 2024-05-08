@@ -9,7 +9,7 @@ headers = {
 }
 
 session.headers.update(headers)
-url ='https://almeapp.com/segments/identified-users-list?app_name=desisandook.myshopify.com&action=cart&yesterday=true'
+url ='https://almeapp.com/segments/identified-users-sessions?app_name=almestore1.myshopify.com&comparison_field=greater_than&comparison_value=10'
 
 
 response = session.get(url)

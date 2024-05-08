@@ -151,10 +151,10 @@ Response:
 
 
 Example Request:
-https://almeapp.com/segments/identified-users-last-visit?app_name=almestore1.myshopify.com&date_field=on&date=2023-04-25
-https://almeapp.com/segments/identified-users-last-visit?app_name=almestore1.myshopify.com&date_field=between&start_date=2023-04-20&end_date=2023-04-25
-https://almeapp.com/segments/identified-users-last-visit?app_name=almestore1.myshopify.com&date_field=before&date=2023-04-25
-https://almeapp.com/segments/identified-users-last-visit?app_name=almestore1.myshopify.com&date_field=after&date=2023-04-25
+https://almeapp.com/segments/identified-users-last-visit?app_name=almestore1.myshopify.com&date_field=on&date=2024-04-25
+https://almeapp.com/segments/identified-users-last-visit?app_name=almestore1.myshopify.com&date_field=between&start_date=2024-04-20&end_date=2024-04-25
+https://almeapp.com/segments/identified-users-last-visit?app_name=almestore1.myshopify.com&date_field=before&date=2024-04-25
+https://almeapp.com/segments/identified-users-last-visit?app_name=almestore1.myshopify.com&date_field=after&date=2024-04-25
 
 '''  
 

@@ -130,9 +130,9 @@ class SaleNotificationView(APIView):
                 cache.set(cache_key, criteria, timeout=3600)
             except SaleNotificationCriteria.DoesNotExist:
                 # set the cache_key to 0
-                cache.set(cache_key, 0, timeout=3600)
-        
-        if criteria != 0:
+                cache.set(cache_key, '0', timeout=3600)
+
+        if criteria != '0':
             # check days_since_last_purchase
             if criteria.days_since_last_purchase is not None:
                 days_since_last_purchased = criteria.days_since_last_purchase
