@@ -4,7 +4,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from .serializers import *
 from .models import *
-from django.utils import timezone
+from datetime import datetime,timedelta
 from django.db.models import Count
 import random
 import logging
@@ -25,13 +25,17 @@ class CartView(APIView):
         max_items = self.request.query_params.get('max_items', 10)
         
         # default query is for last 7 days, filter by token and app_name
-        queryset = Cart.objects.filter(user__token=token, app_name=app_name, created_at__gte=timezone.now() - timezone.timedelta(days=7))
+        queryset = Cart.objects.filter(user__token=token, app_name=app_name, created_at__gte=datetime.now() - timedelta(days=7))
         queryset = queryset.values('item__product_id').annotate(count=Count('item__product_id')).order_by('-count')[:int(max_items)]
-        product_ids = [Item.objects.get(product_id=item['item__product_id']).product_id for item in queryset]
+        product_ids = []
+        for item in queryset:
+            product = Item.objects.filter(product_id=item['item__product_id']).first()
+            if product:
+                product_ids.append(product.product_id)
 
         # if not enough items, get most carted items for the shop
         if len(product_ids) < int(max_items):
-            queryset = Cart.objects.filter(app_name=app_name, created_at__gte=timezone.now() - timezone.timedelta(days=7))
+            queryset = Cart.objects.filter(app_name=app_name, created_at__gte=datetime.now() - timedelta(days=7))
             queryset = queryset.values('item__product_id').annotate(count=Count('item__product_id')).order_by('-count')[:int(max_items)]
             product_ids = [Item.objects.get(product_id=item['item__product_id']).product_id for item in queryset]
             product_ids = random.sample(product_ids, min(len(product_ids), 10))
@@ -50,15 +54,19 @@ class VisitsView(APIView):
             return Response({'error': 'token and app_name must be specified'})
 
         max_items = request.query_params.get('max_items', 10)
-        queryset = Visits.objects.filter(user__token=token,app_name=app_name, created_at__gte=timezone.now() - timezone.timedelta(days=7))
+        queryset = Visits.objects.filter(user__token=token,app_name=app_name, created_at__gte=datetime.now() - timedelta(days=7))
         
         # Annotate visit count and order by descending count
         queryset = queryset.values('item__product_id').annotate(visit_count=Count('item__product_id')).order_by('-visit_count')[:int(max_items)]
-        product_ids = [Item.objects.get(product_id=item['item__product_id']).product_id for item in queryset]
+        product_ids = []
+        for item in queryset:
+            product = Item.objects.filter(product_id=item['item__product_id']).first()
+            if product:
+                product_ids.append(product.product_id)
 
         # if not enough items, get most visited items for the shop
         if len(product_ids) < int(max_items):
-            queryset = Visits.objects.filter(app_name=app_name, created_at__gte=timezone.now() - timezone.timedelta(days=7))
+            queryset = Visits.objects.filter(app_name=app_name, created_at__gte=datetime.now() - timedelta(days=7))
             queryset = queryset.values('item__product_id').annotate(visit_count=Count('item__product_id')).order_by('-visit_count')[:int(max_items)]
             product_ids = [Item.objects.get(product_id=item['item__product_id']).product_id for item in queryset]
             product_ids = random.sample(product_ids, min(len(product_ids), 10))
@@ -76,12 +84,14 @@ class MostVisitedView(APIView):
         if not app_name: # respond with error
             return Response({'error': 'app_name must be specified'})
             
-        queryset = Visits.objects.filter(app_name=app_name, created_at__gte=timezone.now() - timezone.timedelta(days=7))
+        queryset = Visits.objects.filter(app_name=app_name, created_at__gte=datetime.now() - timedelta(days=7))
         queryset = queryset.values('item__product_id').annotate(count=Count('item__product_id')).order_by('-count')
        
         product_ids = []
         for item in queryset:
-            product_ids.append(Item.objects.get(product_id=item['item__product_id']).product_id)
+            product = Item.objects.filter(product_id=item['item__product_id']).first()
+            if product:
+                product_ids.append(product.product_id)
         
         # randomly select 10 items from product_ids
         product_ids = random.sample(product_ids, min(len(product_ids), 10))
@@ -96,12 +106,14 @@ class MostCartedView(APIView):
         if not app_name: 
             return Response({'error': 'app_name must be specified'})
             
-        queryset = Cart.objects.filter(app_name=app_name, created_at__gte=timezone.now() - timezone.timedelta(days=7))
+        queryset = Cart.objects.filter(app_name=app_name, created_at__gte=datetime.now() - timedelta(days=7))
         queryset = queryset.values('item__product_id').annotate(count=Count('item__product_id')).order_by('-count')
        
         product_ids = []
         for item in queryset:
-            product_ids.append(Item.objects.get(product_id=item['item__product_id']).product_id)
+            product = Item.objects.filter(product_id=item['item__product_id']).first()
+            if product:
+                product_ids.append(product.product_id)
         # randomly select 10 items from product_ids
         product_ids = random.sample(product_ids, min(len(product_ids), 10))
         return Response(product_ids)
