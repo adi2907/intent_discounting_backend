@@ -59,8 +59,8 @@ class SubmitContactView(APIView):
             app_name=app_name,
             token = alme_user_token,
             defaults={
+                'first_visit': datetime.now(),
                 'last_visit': datetime.now(),
-                'created_at': datetime.now(),
                 'last_updated': datetime.now(),
             }
         )

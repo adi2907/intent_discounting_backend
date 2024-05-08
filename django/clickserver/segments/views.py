@@ -110,7 +110,7 @@ class IdentifiedUsersListView(APIView):
             identified_users_with_visit = identified_users_with_visit.exclude(name__isnull=True,phone__isnull=True,email__isnull=True,registered_user_id__isnull=True)
             serializer = IdentifiedUserSerializer(identified_users_with_visit,many=True)
         elif action == 'site_visit':
-            users_with_session = users_with_identified_user_id.filter(session__logged_time__gte=start_date,session__logged_time__lte=end_date).distinct()
+            users_with_session = users_with_identified_user_id.filter(sessions__logged_time__gte=start_date,sessions__logged_time__lte=end_date).distinct()
             identified_user_ids = users_with_session.values_list('identified_user',flat=True)
             identified_users_with_session = IdentifiedUser.objects.filter(id__in=identified_user_ids,app_name=app_name)
             identified_users_with_session = identified_users_with_session.exclude(name__isnull=True,phone__isnull=True,email__isnull=True,registered_user_id__isnull=True)
