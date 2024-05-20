@@ -55,7 +55,7 @@ class EventUrlParameters(models.Model):
     token = models.CharField(max_length=255, db_index=True)
     session = models.CharField(max_length=255, db_index=True)
     click_time = models.DateTimeField(db_index=True)
-    source_url = models.CharField(max_length=2048, db_index=True)  # Assuming URL length won't exceed 2048 characters
+    source_url = models.TextField()
     app_name = models.CharField(max_length=255, db_index=True)
     product_id = models.CharField(max_length=255, null=True, db_index=True)
     logged_time = models.DateTimeField(auto_now_add=True, db_index=True)
