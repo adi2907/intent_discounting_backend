@@ -51,6 +51,27 @@ class EventArchive(models.Model):
         db_table = 'event_archive'
 
 
+class EventUrlParameters(models.Model):
+    token = models.CharField(max_length=255, db_index=True)
+    session = models.CharField(max_length=255, db_index=True)
+    click_time = models.DateTimeField(db_index=True)
+    source_url = models.CharField(max_length=2048, db_index=True)  # Assuming URL length won't exceed 2048 characters
+    app_name = models.CharField(max_length=255, db_index=True)
+    product_id = models.CharField(max_length=255, null=True, db_index=True)
+    logged_time = models.DateTimeField(auto_now_add=True, db_index=True)
+    
+    utm_source = models.CharField(max_length=255, null=True, db_index=True)
+    utm_medium = models.CharField(max_length=255, null=True, db_index=True)
+    ad_id = models.CharField(max_length=255, null=True, db_index=True)
+    utm_term = models.CharField(max_length=255, null=True, db_index=True)
+    fbclid = models.CharField(max_length=255, null=True, db_index=True)
+    gclid = models.CharField(max_length=255, null=True, db_index=True)
+    utm_campaign = models.CharField(max_length=255, null=True, db_index=True)
+    utm_content = models.CharField(max_length=255, null=True, db_index=True)
+
+    class Meta:
+        db_table = 'event_url_parameters'
+
 # create purchase model
 class ShopifyPurchase(models.Model):
     cart_token = models.CharField(max_length=255,db_index=True)

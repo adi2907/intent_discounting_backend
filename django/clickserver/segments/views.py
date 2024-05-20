@@ -155,6 +155,7 @@ https://almeapp.com/segments/identified-users-last-visit?app_name=almestore1.mys
 https://almeapp.com/segments/identified-users-last-visit?app_name=almestore1.myshopify.com&date_field=between&start_date=2024-04-20&end_date=2024-04-25
 https://almeapp.com/segments/identified-users-last-visit?app_name=almestore1.myshopify.com&date_field=before&date=2024-04-25
 https://almeapp.com/segments/identified-users-last-visit?app_name=almestore1.myshopify.com&date_field=after&date=2024-04-25
+https://almeapp.com/segments/identified-users-last-visit?app_name=millet-amma-store.myshopify.com&date_field=before&date=2024-05-07
 
 '''  
 
