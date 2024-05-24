@@ -11,7 +11,6 @@ class Command(BaseCommand):
         parser.add_argument('csv_file', type=str, help='The path to the CSV file containing purchase IDs')
 
     def handle(self, *args, **options):
-        i=1
         csv_file = options['csv_file']
         with open(csv_file, 'r', encoding='utf-8-sig') as file:
             reader = csv.reader(file)
@@ -36,9 +35,6 @@ class Command(BaseCommand):
 
                     if tracking_params:
                         self.process_order(order_info, tracking_params)
-                i+=1
-                if i>10:
-                    break
 
     def process_order(self, order_info, tracking_params):
         created_at_str = order_info['created_at']
@@ -59,6 +55,7 @@ class Command(BaseCommand):
                 break
             else:
                 print("No match found for tracking param: ", param)
+                return
           
         cart_token = order_info.get('cart_token', '')
         if cart_token == '':
