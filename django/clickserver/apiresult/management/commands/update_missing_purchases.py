@@ -50,9 +50,9 @@ class Command(BaseCommand):
                 event_url = matches.first()
                 print("Match found for tracking param: ", param)
                 user = User.objects.filter(token=event_url.token,app_name='millet-amma-store.myshopify.com').first()
-                print("User: ", user)
-
-                break
+                if not user:
+                    print("User not found for token: ", event_url.token)
+                    return
             else:
                 print("No match found for tracking param: ", param)
                 return
@@ -70,6 +70,10 @@ class Command(BaseCommand):
             print("Processing product: ", product_id)
             db_item = Item.objects.filter(product_id=product_id).first()
             print("Item: ", db_item)
+            # if item not found, return
+            if not db_item:
+                print("Item not found in DB: ", product_id)
+                return
             if db_item:
                 Purchase.objects.create(
                     user=user,
