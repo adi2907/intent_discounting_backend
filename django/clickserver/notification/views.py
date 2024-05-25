@@ -87,20 +87,18 @@ class SaleNotificationView(APIView):
         
         try:
             session = Sessions.objects.get(session_key=session_key,app_name=app_name,is_active=True)
-        except:
-            
-            logger.info("Error in sale notification: session not found for token: %s, app_name: %s, session_id: %s" % (token, app_name, session_key))
+            user = session.user
+        except Sessions.DoesNotExist:
+            logger.info(f"Error in sale notification: session not found for token: {token}, app_name: {app_name}, session_id: {session_key}")
             return Response({'error': 'session not found'})
-
-        try:
-            user = User.objects.get(token=token, app_name=app_name)
-        except:
-           
-            logger.info("Error in sale notification: user not found for token: %s, app_name: %s, session_id: %s" % (token, app_name, session_key))
+        except AttributeError:  
+            logger.info(f"Error in sale notification: user not found for session with token: {token}, app_name: {app_name}, session_id: {session_key}")
             return Response({'error': 'user not found'})
 
-        if user.purchase_last_4_sessions == 1:
+
+        if user and user.purchase_last_4_sessions == 1:
             return Response({'sale_notification': False,'criteria_met': False})
+        
         if session.events_count is None or \
                 session.page_load_count is None or \
                 session.total_products_visited is None:
