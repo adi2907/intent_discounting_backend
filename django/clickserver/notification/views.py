@@ -86,7 +86,7 @@ class SaleNotificationView(APIView):
         
         
         try:
-            session = Sessions.objects.get(session_key=session_key,app_name=app_name)
+            session = Sessions.objects.get(session_key=session_key,app_name=app_name,is_active=True)
         except:
             
             logger.info("Error in sale notification: session not found for token: %s, app_name: %s, session_id: %s" % (token, app_name, session_key))

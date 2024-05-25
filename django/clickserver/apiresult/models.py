@@ -94,7 +94,7 @@ class UserSummary(models.Model):
 
 class Sessions(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE,null=True)
-    is_active = models.BooleanField(null=True,default=True)
+    is_active = models.BooleanField(null=True,default=True,db_index=True)
     app_name = models.CharField(max_length=255,null=True,db_index=True)
     session_key = models.CharField(max_length=255,null=False,db_index=True,unique=True)
     session_start = models.DateTimeField(null=True,db_index=True)
