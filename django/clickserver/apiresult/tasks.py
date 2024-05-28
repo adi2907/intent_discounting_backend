@@ -194,40 +194,41 @@ def update_individual_session(session_key, events_data, app_name):
     with transaction.atomic():
         session, created = Sessions.objects.get_or_create(session_key=session_key, app_name=app_name)
         
-        if created:
-            # Assign the session to one of the two groups randomly
-            session.experiment_group = 'experimental' if random.random() < 0.5 else 'control'
-            session.logged_time = session_variables.get('session_end', session.logged_time)  # Use get to prevent KeyError
-            session.save()
-
         try:
             user = User.objects.get(token=user_token, app_name=app_name)
             session.user = user
         except User.DoesNotExist:
             logger.info(f"Exception getting user: {user_token} for session: {session_key}")
             return
+        
+        if created:
+            # Assign the session to one of the two groups randomly
+            session.experiment_group = 'experimental' if random.random() < 0.5 else 'control'
+            for key, value in session_variables.items():
+                setattr(session, key, value)
+            session.logged_time = session_variables['session_end']
+            session.save()
 
-        # Update or set session variables
-        for key, value in session_variables.items():
-            if key in ['events_count', 'page_load_count', 'click_count', 'total_products_visited', 'purchase_count', 'cart_count',
-                       'product_total_price']:
-                current_value = getattr(session, key, 0)  # Default to 0 if attribute does not exist
-                setattr(session, key, current_value + value)
+        else: 
+            # Update or set session variables
+            for key, value in session_variables.items():
+                if key in ['events_count', 'page_load_count', 'click_count', 'total_products_visited', 'purchase_count', 'cart_count',
+                        'product_total_price']:
+                    # Increment the existing attribute for these keys
+                    setattr(session, key, getattr(session, key) + value)
 
-            elif key in ['has_purchased', 'has_carted', 'has_checkout', 'is_logged_in', 'is_paid_traffic', 'session_end']:
-                current_value = getattr(session, key, value)  # Use the provided or current value as default
-                setattr(session, key, max(current_value, value))
+                elif key in ['has_purchased', 'has_carted', 'has_checkout', 'is_logged_in', 'is_paid_traffic','session_end']:
+                    setattr(session, key, max(getattr(session, key), value))
 
-            elif key == 'unique_products_visited':
-                existing_products = set(getattr(session, 'unique_products_visited', []))
-                new_products = set(value)
-                combined_products = list(existing_products.union(new_products))
-                setattr(session, key, combined_products)
-
-        session.logged_time = session_variables.get('session_end', session.logged_time)  # Update the logged time
-        session.status = 'active'
-        session.save()
-
+                elif key == 'unique_products_visited':
+                    # take unique products visited and add to existing unique products visited
+                    unique_products_visited = getattr(session, key)
+                    unique_products_visited.extend(value)
+                    unique_products_visited = list(set(unique_products_visited))
+                    setattr(session, key, unique_products_visited)
+            session.logged_time = session_variables['session_end']
+            session.status = 'active'
+            session.save()
     connections.close_all()
 
 
