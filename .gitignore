@@ -13,3 +13,4 @@ mysql2sqlite-master/
 *.sqlite3
 *.rdb
 celerybeat-schedule
+*.csv

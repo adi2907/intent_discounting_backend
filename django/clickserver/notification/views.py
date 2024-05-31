@@ -87,6 +87,8 @@ class SaleNotificationView(APIView):
         
         try:
             session = Sessions.objects.get(session_key=session_key,app_name=app_name,is_active=True)
+            if session.experiment_group == 'control':
+                return Response({'error': 'control group session'})
             user = session.user
         except Sessions.DoesNotExist:
             logger.info(f"Error in sale notification: session not found for token: {token}, app_name: {app_name}, session_id: {session_key}")
