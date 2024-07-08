@@ -59,6 +59,7 @@ def events(request):
         lastEventTimestamp = data.get('lastEventTimestamp')
         alme_user_token = data.get('alme_user_token')
         current_time = datetime.now()
+        logger.info(f"Last event timestamp: {lastEventTimestamp} for user: {alme_user_token}")
         if lastEventTimestamp and (current_time - datetime.fromtimestamp(int(lastEventTimestamp))).total_seconds() > (SESSION_IDLE_TIME*60):
             raw_session_id = f"{data.get('app_name', 'default_app')}_{datetime.now().isoformat()}"
             session_id = hashlib.sha1(raw_session_id.encode()).hexdigest()
