@@ -63,8 +63,7 @@ def events(request):
         # print last event timestamp, session_id and current time and user
         # get the app_name from the first event
         app_name = events[0].get('app_name', 'default_app')
-        if app_name == 'almestore1.myshopify.com':
-            logger.info(f"Last event timestamp: {lastEventTimestamp}, Session id: {session_id}, Current time: {current_time}, User: {alme_user_token}, Events: {events}")
+        logger.info(f"Last event timestamp: {lastEventTimestamp}, Session id: {session_id}, Current time: {current_time}, User: {alme_user_token}, Events: {events}")
         if lastEventTimestamp and (current_time - datetime.fromtimestamp(int(lastEventTimestamp))).total_seconds() > (SESSION_IDLE_TIME*60):
             # print the existing session id
             logger.info(f"Session id: {session_id} is expired. Creating new session id.")
