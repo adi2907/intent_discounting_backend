@@ -60,24 +60,23 @@ def events(request):
         lastEventTimestamp = data.get('lastEventTimestamp')
         alme_user_token = data.get('alme_user_token')
         current_time = datetime.now()
-        # print last event timestamp, session_id and current time and user
-        # get the app_name from the first event
-        #app_name = events[0].get('app_name', 'default_app')
-        #logger.info(f"Last event timestamp: {lastEventTimestamp}, Session id: {session_id}, Current time: {current_time}, User: {alme_user_token}, Events: {events}")
         if lastEventTimestamp and (current_time - datetime.fromtimestamp(int(lastEventTimestamp))).total_seconds() > (SESSION_IDLE_TIME*60):
-            # print the existing session id
-            logger.info(f"Session id: {session_id} is expired. Creating new session id.")
             raw_session_id = f"{data.get('app_name', 'default_app')}_{datetime.now().isoformat()}"
-            session_id = hashlib.sha1(raw_session_id.encode()).hexdigest()
+            new_session_id = hashlib.sha1(raw_session_id.encode()).hexdigest()
             session_flag = True
         if session_flag:
-            logger.info(f"New session id: {session_id} created")
+            logger.info(f"New session id: {new_session_id} created. Old session id is {session_id}")
 
         
         for item in events:
             event = Event()
             event.token = alme_user_token
-            event.session = session_id
+            if session_flag: # if session has changed
+                # check if the event time stamp is more than SESSION_IDLE_TIME
+                if (current_time - datetime.fromtimestamp(int(item.get('click_time')))).total_seconds() > (SESSION_IDLE_TIME*60):
+                    event.session = session_id
+                else:
+                    event.session = new_session_id
             event.user_login = item.get('user_login', '')
             event.user_id = item.get('user_id', '')
 
