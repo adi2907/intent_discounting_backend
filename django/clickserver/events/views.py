@@ -15,33 +15,34 @@ from apiresult.utils.config import *
 from apiresult.models import *
 import hashlib
 
-# Example usage
-# curl -X POST https://almeapp.com/events \
-# -H "Content-Type: application/json" \
-# -H "Origin: https://www.almeapp.co.in" \
-# -d '{
-#     "shop": "almestore1.myshopify.com",
-#     "events": [
-#         {
-#             "user_login": null,
-#             "user_id": null,
-#             "user_regd": "",
-#             "click_time": 1709702150,
-#             "click_text": "",
-#             "event_type": "page_load",
-#             "event_name": "page_load",
-#             "source_url": "https://almestore1.myshopify.com/",
-#             "app_name": "almestore1.myshopify.com",
-#             "product_id": null,
-#             "product_name": null,
-#             "product_price": null
-#         },
-#     ],
-#     "session_id": "1b562bf038ac4bdf8a3e8536511ce711",
-#     "alme_user_token": "2789929o260",
-#     "lastEventTimestamp": "1708336987"
-# }'
-
+#Example usage
+'''
+curl -X POST https://almeapp.com/events \
+-H "Content-Type: application/json" \
+-H "Origin: https://www.almeapp.co.in" \
+-d '{
+    "shop": "almestore1.myshopify.com",
+    "events": [
+        {
+            "user_login": null,
+            "user_id": null,
+            "user_regd": "",
+            "click_time": 1709702150,
+            "click_text": "",
+            "event_type": "page_load",
+            "event_name": "page_load",
+            "source_url": "https://almestore1.myshopify.com/",
+            "app_name": "almestore1.myshopify.com",
+            "product_id": null,
+            "product_name": null,
+            "product_price": null
+        },
+    ],
+    "session_id": "1b562bf038ac4bdf8a3e8536511ce711",
+    "alme_user_token": "2789929o260",
+    "lastEventTimestamp": "1708336987"
+}'
+'''
 # accept post requests from the xhttp request and save the data to the database
 @csrf_exempt
 def events(request):
@@ -59,6 +60,11 @@ def events(request):
         lastEventTimestamp = data.get('lastEventTimestamp')
         alme_user_token = data.get('alme_user_token')
         current_time = datetime.now()
+        # print last event timestamp, session_id and current time and user
+        # get the app_name from the first event
+        app_name = events[0].get('app_name', 'default_app')
+        if app_name == 'almestore1.myshopify.com':
+            print(f"Last event timestamp: {lastEventTimestamp}, Session id: {session_id}, Current time: {current_time}, User: {alme_user_token}, Events: {events}")
         if lastEventTimestamp and (current_time - datetime.fromtimestamp(int(lastEventTimestamp))).total_seconds() > (SESSION_IDLE_TIME*60):
             # print the existing session id
             print(f"Session id: {session_id} is expired. Creating new session id.")
