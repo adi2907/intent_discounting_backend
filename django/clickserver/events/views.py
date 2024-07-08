@@ -49,7 +49,7 @@ def events(request):
     if request.method == 'GET':
         return HttpResponse(" This is the events url. Please send a post request to this url")
     if request.method == 'POST':
-        
+        session_flag = False
         data = json.loads(request.body)
         events = data.get('events', [])
         session_id = data.get('session_id')
@@ -59,12 +59,16 @@ def events(request):
         lastEventTimestamp = data.get('lastEventTimestamp')
         alme_user_token = data.get('alme_user_token')
         current_time = datetime.now()
-        logger.info(f"Last event timestamp: {lastEventTimestamp} for user: {alme_user_token}")
         if lastEventTimestamp and (current_time - datetime.fromtimestamp(int(lastEventTimestamp))).total_seconds() > (SESSION_IDLE_TIME*60):
+            # print the existing session id
+            print(f"Session id: {session_id} is expired. Creating new session id.")
             raw_session_id = f"{data.get('app_name', 'default_app')}_{datetime.now().isoformat()}"
             session_id = hashlib.sha1(raw_session_id.encode()).hexdigest()
+            session_flag = True
+        if session_flag:
+            print(f"New session id: {session_id} created")
 
-            
+        
         for item in events:
             event = Event()
             event.token = alme_user_token
@@ -89,8 +93,10 @@ def events(request):
             event.logged_time = datetime.now()
             #save the event object to the database
             event.save()
-
+        if session_flag:
+            print("Returning new session id {} to the user".format(session_id))
         return JsonResponse({'session_id': session_id, 'success': True})
+    
     
 
 #Example usage
