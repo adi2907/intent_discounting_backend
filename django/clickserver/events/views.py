@@ -64,15 +64,15 @@ def events(request):
         # get the app_name from the first event
         app_name = events[0].get('app_name', 'default_app')
         if app_name == 'almestore1.myshopify.com':
-            print(f"Last event timestamp: {lastEventTimestamp}, Session id: {session_id}, Current time: {current_time}, User: {alme_user_token}, Events: {events}")
+            logger.info(f"Last event timestamp: {lastEventTimestamp}, Session id: {session_id}, Current time: {current_time}, User: {alme_user_token}, Events: {events}")
         if lastEventTimestamp and (current_time - datetime.fromtimestamp(int(lastEventTimestamp))).total_seconds() > (SESSION_IDLE_TIME*60):
             # print the existing session id
-            print(f"Session id: {session_id} is expired. Creating new session id.")
+            logger.info(f"Session id: {session_id} is expired. Creating new session id.")
             raw_session_id = f"{data.get('app_name', 'default_app')}_{datetime.now().isoformat()}"
             session_id = hashlib.sha1(raw_session_id.encode()).hexdigest()
             session_flag = True
         if session_flag:
-            print(f"New session id: {session_id} created")
+            logger.info(f"New session id: {session_id} created")
 
         
         for item in events:
@@ -100,7 +100,7 @@ def events(request):
             #save the event object to the database
             event.save()
         if session_flag:
-            print("Returning new session id {} to the user".format(session_id))
+            logger.info("Returning new session id {} to the user".format(session_id))
         return JsonResponse({'session_id': session_id, 'success': True})
     
     
