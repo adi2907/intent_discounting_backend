@@ -64,10 +64,7 @@ def events(request):
             raw_session_id = f"{data.get('app_name', 'default_app')}_{datetime.now().isoformat()}"
             new_session_id = hashlib.sha1(raw_session_id.encode()).hexdigest()
             session_flag = True
-        if session_flag:
-            logger.info(f"New session id: {new_session_id} created. Old session id is {session_id}")
 
-        
         for item in events:
             event = Event()
             event.token = alme_user_token
@@ -97,8 +94,6 @@ def events(request):
             event.logged_time = datetime.now()
             #save the event object to the database
             event.save()
-        if session_flag:
-            logger.info("Returning new session id {} to the user".format(session_id))
         return JsonResponse({'session_id': session_id, 'success': True})
     
     
