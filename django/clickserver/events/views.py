@@ -51,6 +51,7 @@ def events(request):
         return HttpResponse(" This is the events url. Please send a post request to this url")
     if request.method == 'POST':
         session_flag = False
+        new_session_id = None 
         data = json.loads(request.body)
         events = data.get('events', [])
         session_id = data.get('session_id')
@@ -94,6 +95,8 @@ def events(request):
             event.logged_time = datetime.now()
             #save the event object to the database
             event.save()
+        if session_flag: # return the new session id if the session has changed
+            session_id = new_session_id
         return JsonResponse({'session_id': session_id, 'success': True})
     
     
