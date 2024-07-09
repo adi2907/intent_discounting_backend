@@ -65,7 +65,7 @@ def events(request):
             raw_session_id = f"{data.get('app_name', 'default_app')}_{datetime.now().isoformat()}"
             new_session_id = hashlib.sha1(raw_session_id.encode()).hexdigest()
             session_change_flag = True
-        logger.info("Session flag is {}, new session id is {}, old session id is {}".format(session_change_flag, new_session_id, session_id))
+        #logger.info("Session flag is {}, new session id is {}, old session id is {}".format(session_change_flag, new_session_id, session_id))
         for item in events:
             event = Event()
             event.token = alme_user_token
