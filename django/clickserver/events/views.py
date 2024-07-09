@@ -75,8 +75,8 @@ def events(request):
                     event.session = session_id
                 else:
                     event.session = new_session_id
-            if event.session == None:
-                logger.info("Session is None for token {}".format(alme_user_token))
+            if not event.session:
+                logger.info("Session is none or blank for token {}".format(alme_user_token))
             event.user_login = item.get('user_login', '')
             event.user_id = item.get('user_id', '')
 
