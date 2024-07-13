@@ -65,9 +65,9 @@ def events(request):
             raw_session_id = f"{data.get('app_name', 'default_app')}_{datetime.now().isoformat()}"
             new_session_id = hashlib.sha1(raw_session_id.encode()).hexdigest()
             session_change_flag = True
-        # if lastEventTimestamp:
-        #     logger.info("Last event timestamp is {}".format(datetime.fromtimestamp(int(lastEventTimestamp)).strftime('%Y-%m-%d %H:%M:%S')))
-        # logger.info("Session flag is {}, new session id is {}, old session id is {}".format(session_change_flag, new_session_id, session_id))
+        if lastEventTimestamp:
+            logger.info("Last event timestamp is {}".format(datetime.fromtimestamp(int(lastEventTimestamp)).strftime('%Y-%m-%d %H:%M:%S')))
+        logger.info("Session flag is {}, new session id is {}, old session id is {}".format(session_change_flag, new_session_id, session_id))
         for item in events:
             event = Event()
             event.token = alme_user_token
@@ -101,7 +101,7 @@ def events(request):
             #save the event object to the database
             event.save()
             
-            #logger.info("Event click time is {0} and event session is {1} and event logged_time is {2} for token {3}".format(event.click_time, event.session, event.logged_time, alme_user_token))
+            logger.info("Event click time is {0} and event session is {1} and event logged_time is {2} for token {3}".format(event.click_time, event.session, event.logged_time, alme_user_token))
         
         if session_change_flag: # return the new session id if the session has changed
             session_id = new_session_id
