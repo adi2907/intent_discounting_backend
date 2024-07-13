@@ -17,6 +17,7 @@ class Item(models.Model):
 # Create compiled user model
 class User(models.Model):
     token = models.CharField(max_length=255,db_index=True)
+    experiment_group = models.CharField(max_length=32, null=True, blank=True, db_index=True)
     user_login = models.TextField(null=True)
     registered_user_id = models.CharField(max_length=255,null=True)
     identified_user = models.ForeignKey('IdentifiedUser', on_delete=models.CASCADE,null=True)

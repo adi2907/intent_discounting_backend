@@ -93,6 +93,9 @@ def update_individual_user(user_token, events_data, app_name):
     except:
         logger.info("Exception creating user: " + user_token)
         return
+    if created:
+        user.experiment_group = 'experimental' if random.random() < 0.5 else 'control'
+        user.save()
     connections.close_all()
 
 @shared_task
@@ -200,16 +203,22 @@ def update_individual_session(session_key, events_data, app_name):
         except User.DoesNotExist:
             logger.info(f"Exception getting user: {user_token} for session: {session_key}")
             return
-        
-        if created:
-            # Assign the session to one of the two groups randomly
-            session.experiment_group = 'experimental' if random.random() < 0.5 else 'control'
+        # get the experimenatal group from the user
+        experiment_group = user.experiment_group
+        if not experiment_group:
+            # assign a group to user randomly and save the user also
+            experiment_group = 'experimental' if random.random() < 0.5 else 'control'
+            user.experiment_group = experiment_group
+            user.save()
+        session.experiment_group = experiment_group
+        if created:       
             for key, value in session_variables.items():
                 setattr(session, key, value)
             session.logged_time = session_variables['session_end']
             session.save()
 
         else: 
+            
             # Update or set session variables
             for key, value in session_variables.items():
                 if key in ['events_count', 'page_load_count', 'click_count', 'total_products_visited', 'purchase_count', 'cart_count',
