@@ -65,7 +65,6 @@ def events(request):
             raw_session_id = f"{data.get('app_name', 'default_app')}_{datetime.now().isoformat()}"
             new_session_id = hashlib.sha1(raw_session_id.encode()).hexdigest()
             session_change_flag = True
-        app_name = events[0].get('app_name', '')
         if lastEventTimestamp:
             logger.info("Last event timestamp is {}".format(datetime.fromtimestamp(int(lastEventTimestamp)).strftime('%Y-%m-%d %H:%M:%S')))
         logger.info("Session flag is {}, new session id is {}, old session id is {}".format(session_change_flag, new_session_id, session_id))
@@ -77,9 +76,9 @@ def events(request):
             if session_change_flag: # if session has changed
                 # check if the event time stamp is more than SESSION_IDLE_TIME
                 if (current_time - datetime.fromtimestamp(int(item.get('click_time')))).total_seconds() > (SESSION_IDLE_TIME*60):
-                    event.session = new_session_id
-                else:
                     event.session = session_id
+                else:
+                    event.session = new_session_id
             else:
                 event.session = session_id
             if not event.session:
