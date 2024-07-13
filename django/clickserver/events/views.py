@@ -74,7 +74,7 @@ def events(request):
             # convert epoch time to datetime in 'yyyy-mm-dd hh:mm:ss' format
             event.click_time = datetime.fromtimestamp(item.get('click_time', 0)).strftime('%Y-%m-%d %H:%M:%S')
             if session_change_flag: # if session has changed
-                # check if the event time stamp is more than SESSION_IDLE_TIME
+                # check if the event time stamp is more than SESSION_IDLE_TIME, If its more than an hour old, assign the old session
                 if (current_time - datetime.fromtimestamp(int(item.get('click_time')))).total_seconds() > (SESSION_IDLE_TIME*60):
                     event.session = session_id
                 else:

@@ -207,9 +207,14 @@ def update_individual_session(session_key, events_data, app_name):
             for key, value in session_variables.items():
                 setattr(session, key, value)
             session.logged_time = session_variables['session_end']
+            # print all the session variables
+            logger.info("Session variables in created session: " + str(session_variables))
             session.save()
 
         else: 
+            logger.info("Checking to see if session_update code is being executed")
+            # print all the session variables
+            logger.info("Session variables in updated session: " + str(session_variables))
             # Update or set session variables
             for key, value in session_variables.items():
                 if key in ['events_count', 'page_load_count', 'click_count', 'total_products_visited', 'purchase_count', 'cart_count',
@@ -227,7 +232,9 @@ def update_individual_session(session_key, events_data, app_name):
                     unique_products_visited = list(set(unique_products_visited))
                     setattr(session, key, unique_products_visited)
             session.logged_time = session_variables['session_end']
+            logger.info("Session status prior: " + session.status)    
             session.status = 'active'
+            logger.info("Session status after: " + session.status)
             session.save()
     connections.close_all()
 
