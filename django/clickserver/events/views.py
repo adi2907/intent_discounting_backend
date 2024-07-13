@@ -66,8 +66,8 @@ def events(request):
             new_session_id = hashlib.sha1(raw_session_id.encode()).hexdigest()
             session_change_flag = True
         app_name = events[0].get('app_name', '')
-        
-        logger.info("Last event timestamp is {}".format(datetime.fromtimestamp(int(lastEventTimestamp)).strftime('%Y-%m-%d %H:%M:%S')))
+        if lastEventTimestamp:
+            logger.info("Last event timestamp is {}".format(datetime.fromtimestamp(int(lastEventTimestamp)).strftime('%Y-%m-%d %H:%M:%S')))
         logger.info("Session flag is {}, new session id is {}, old session id is {}".format(session_change_flag, new_session_id, session_id))
         for item in events:
             event = Event()
