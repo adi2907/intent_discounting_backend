@@ -66,9 +66,9 @@ def events(request):
             new_session_id = hashlib.sha1(raw_session_id.encode()).hexdigest()
             session_change_flag = True
         app_name = events[0].get('app_name', '')
-        if app_name == 'almestore1.myshopify.com':
-            logger.info("Last event timestamp is {}".format(datetime.fromtimestamp(int(lastEventTimestamp)).strftime('%Y-%m-%d %H:%M:%S')))
-            logger.info("Session flag is {}, new session id is {}, old session id is {}".format(session_change_flag, new_session_id, session_id))
+        
+        logger.info("Last event timestamp is {}".format(datetime.fromtimestamp(int(lastEventTimestamp)).strftime('%Y-%m-%d %H:%M:%S')))
+        logger.info("Session flag is {}, new session id is {}, old session id is {}".format(session_change_flag, new_session_id, session_id))
         for item in events:
             event = Event()
             event.token = alme_user_token
@@ -101,9 +101,8 @@ def events(request):
             event.logged_time = datetime.now()
             #save the event object to the database
             event.save()
-            if app_name == 'almestore1.myshopify.com':
-                # log all the values in the event
-                logger.info("Event click time is {0} and event session is {1} and event logged_time is {2}".format(event.click_time, event.session, event.logged_time))
+            
+            logger.info("Event click time is {0} and event session is {1} and event logged_time is {2} for token {3}".format(event.click_time, event.session, event.logged_time, alme_user_token))
         
         if session_change_flag: # return the new session id if the session has changed
             session_id = new_session_id
