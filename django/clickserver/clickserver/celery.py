@@ -15,8 +15,3 @@ def debug_task(self):
 
 from celery.signals import setup_logging
 
-@setup_logging.connect
-def config_loggers(*args, **kwags):
-    from django.conf import settings
-    import logging.config
-    logging.config.dictConfig(settings.LOGGING)
