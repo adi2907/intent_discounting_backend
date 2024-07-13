@@ -65,10 +65,15 @@ def events(request):
             raw_session_id = f"{data.get('app_name', 'default_app')}_{datetime.now().isoformat()}"
             new_session_id = hashlib.sha1(raw_session_id.encode()).hexdigest()
             session_change_flag = True
-        #logger.info("Session flag is {}, new session id is {}, old session id is {}".format(session_change_flag, new_session_id, session_id))
+        app_name = events[0].get('app_name', '')
+        if app_name == 'almestore1.myshopify.com':
+            logger.info("Last event timestamp is {}".format(datetime.fromtimestamp(int(lastEventTimestamp)).strftime('%Y-%m-%d %H:%M:%S')))
+            logger.info("Session flag is {}, new session id is {}, old session id is {}".format(session_change_flag, new_session_id, session_id))
         for item in events:
             event = Event()
             event.token = alme_user_token
+            # convert epoch time to datetime in 'yyyy-mm-dd hh:mm:ss' format
+            event.click_time = datetime.fromtimestamp(item.get('click_time', 0)).strftime('%Y-%m-%d %H:%M:%S')
             if session_change_flag: # if session has changed
                 # check if the event time stamp is more than SESSION_IDLE_TIME
                 if (current_time - datetime.fromtimestamp(int(item.get('click_time')))).total_seconds() > (SESSION_IDLE_TIME*60):
@@ -81,9 +86,6 @@ def events(request):
                 logger.info("Session is none or blank for token {}".format(alme_user_token))
             event.user_login = item.get('user_login', '')
             event.user_id = item.get('user_id', '')
-
-            # convert epoch time to datetime in 'yyyy-mm-dd hh:mm:ss' format
-            event.click_time = datetime.fromtimestamp(item.get('click_time', 0)).strftime('%Y-%m-%d %H:%M:%S')
             event.user_regd = item.get('user_regd','')
             event.event_type = item.get('event_type', '')
             event.event_name = item.get('event_name', '')
@@ -99,8 +101,13 @@ def events(request):
             event.logged_time = datetime.now()
             #save the event object to the database
             event.save()
+            if app_name == 'almestore1.myshopify.com':
+                # log all the values in the event
+                logger.info("Event click time is {0} and event session is {1} and event logged_time is {2}".format(event.click_time, event.session, event.logged_time))
+        
         if session_change_flag: # return the new session id if the session has changed
             session_id = new_session_id
+        
         return JsonResponse({'session_id': session_id, 'success': True})
     
     
