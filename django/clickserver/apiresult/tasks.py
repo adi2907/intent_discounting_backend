@@ -210,9 +210,6 @@ def update_individual_session(session_key, events_data, app_name):
             session.save()
 
         else: 
-            logger.info("Checking to see if session_update code is being executed")
-            # print all the session variables
-            logger.info("Session variables in updated session: " + str(session_variables))
             # Update or set session variables
             for key, value in session_variables.items():
                 if key in ['events_count', 'page_load_count', 'click_count', 'total_products_visited', 'purchase_count', 'cart_count',
