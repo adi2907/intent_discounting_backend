@@ -85,20 +85,44 @@ class SaleNotificationView(APIView):
             return Response({'error': 'token, app_name, session_id must be specified'})
         
         
+        # Using only the latest available session and not the session sent by the javascript client
+
         try:
-            session = Sessions.objects.get(session_key=session_key,app_name=app_name,is_active=True)
-            # if session.experiment_group == 'control':
-            #     return Response({'error': 'control group session'})
-            user = session.user
-        except Sessions.DoesNotExist:
-            logger.info(f"Error in sale notification: session not found for token: {token}, app_name: {app_name}, session_id: {session_key}")
-            return Response({'error': 'session not found'})
-        except AttributeError:  
-            logger.info(f"Error in sale notification: user not found for session with token: {token}, app_name: {app_name}, session_id: {session_key}")
+            # Get the user based on the token and app_name
+            user = User.objects.get(token=token, app_name=app_name)
+
+            # Get the most recent active session for this user
+            session = Sessions.objects.filter(
+                user=user,
+                app_name=app_name,
+                is_active=True
+            ).order_by('-session_start').first()
+
+            if not session:
+                logger.info(f"Error in sale notification: no active session found for user with token: {token}, app_name: {app_name}")
+                return Response({'error': 'no active session found'})
+
+        except User.DoesNotExist:
+            logger.info(f"Error in sale notification: user not found for token: {token}, app_name: {app_name}")
             return Response({'error': 'user not found'})
+        except Exception as e:
+            logger.info(f"Error in sale notification: {str(e)}")
+            return Response({'error': 'An unexpected error occurred'})
 
 
-        if user and user.purchase_last_4_sessions == 1:
+
+        # try:
+        #     session = Sessions.objects.get(session_key=session_key,app_name=app_name,is_active=True)
+        #     user = session.user
+        # except Sessions.DoesNotExist:
+        #     logger.info(f"Error in sale notification: session not found for token: {token}, app_name: {app_name}, session_id: {session_key}")
+        #     return Response({'error': 'session not found'})
+        # except AttributeError:  
+        #     logger.info(f"Error in sale notification: user not found for session with token: {token}, app_name: {app_name}, session_id: {session_key}")
+        #     return Response({'error': 'user not found'})
+
+
+        if user.purchase_last_4_sessions == 1:
             return Response({'sale_notification': False,'criteria_met': False})
         
         if session.events_count is None or \
