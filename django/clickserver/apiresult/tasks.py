@@ -13,9 +13,11 @@ import concurrent.futures
 import time
 from apiresult.utils.app_actions import app_actions
 from apiresult.utils.config import *
+from apiresult.utils.event_classification import event_classifier
 from django.utils import timezone
 from django.db import transaction
 import random
+from events.serializers import EventSerializer
 
 
 
@@ -181,13 +183,16 @@ def update_identified_user_details(user_events, user, app_name):
 @shared_task
 def update_sessions(session_keys, events_data, app_name):
     with ThreadPoolExecutor() as executor:
-        session_tasks = [executor.submit(update_individual_session, session_key,events_data, app_name) for session_key in session_keys]
-        for future in concurrent.futures.as_completed(session_tasks):
+        individual_session_tasks = [executor.submit(update_individual_session, session_key,events_data, app_name) for session_key in session_keys]
+        sale_notif_session_tasks = [executor.submit(update_sale_notif_session, session_key, events_data, app_name) for session_key in session_keys]
+        all_tasks = individual_session_tasks + sale_notif_session_tasks
+
+        for future in concurrent.futures.as_completed(all_tasks):
             future.result()
 
 @shared_task
 def update_individual_session(session_key, events_data, app_name):
-    session_events = [event for event in events_data if event['session'] == session_key]
+    session_events = events_data
     if not session_events:
         return
 
@@ -300,6 +305,82 @@ def get_session_variables(session_events,app_name):
             'cart_count':cart_count,'has_carted':has_carted,'has_purchased':has_purchased,
             'product_total_price':product_total_price,'is_logged_in':is_logged_in,
             'is_paid_traffic':is_paid_traffic}
+
+
+@shared_task
+def update_sale_notif_session(session_key, events_data, app_name):
+    try:
+        session_events = events_data
+        if not session_events:
+            return
+        user_token = session_events[0]['token']
+        user  = None
+        classified_events = []
+        time_diff_events = []
+        with transaction.atomic():
+            # retrieve the session object in case already present in the database
+            sale_notif_session = SaleNotificationSessions.objects.filter(session_key=session_key,app_name=app_name).first()
+
+            if not sale_notif_session:
+                # create a new sale notification session
+                sale_notif_session = SaleNotificationSessions(session_key=session_key,app_name=app_name)
+                try:
+                    user = User.objects.get(token=user_token, app_name=app_name)
+                    sale_notif_session.user = user
+                except User.DoesNotExist:
+                    logger.info(f"Exception getting user: {user_token} for sale_notif_session: {session_key}")
+                    return
+                # get the experimenatal group from the user
+                experiment_group = user.experiment_group
+                if not experiment_group:
+                    # assign a group to user randomly and save the user also
+                    experiment_group = 'experimental' if random.random() < 0.5 else 'control'
+                    user.experiment_group = experiment_group
+                    user.save()
+                sale_notif_session.experiment_group = experiment_group
+                sale_notif_session.user = user
+                classified_events,time_diff_events= event_classifier(session_events,app_name)
+                sale_notif_session.events_category_list = classified_events
+                sale_notif_session.time_diff_list = time_diff_events
+                sale_notif_session.event_sequence_length = len(classified_events)
+                # save the last event serialized as datetime format will not be allowed in Jsonfield
+                serializer = EventSerializer(session_events[-1])
+                sale_notif_session.last_event = serializer.data
+                try:
+                    sale_notif_session.save()
+                except Exception as e:
+                    logger.info(f"Failed to save new sale notification session: {session_key} - {str(e)}")
+            else:
+                logger.info("Extending existing sale notification session")
+                # append the last event of the session to the session_events at the beginning and pass to the classifier
+                session_events.insert(0,sale_notif_session.last_event)
+                classified_events,time_diff_events= event_classifier(session_events,app_name)
+                # fetch the existing events and time_diffs and append the new ones
+                existing_events = sale_notif_session.events_category_list
+                existing_time_diffs = sale_notif_session.time_diff_list
+                # remove the last event from existin events and time_diffs
+                # IMPORTANT: when extending a session, we need to check if the last event was followed by 'add to cart' or 
+                # 'catalog to product click' events. These can only be seen if we can check the new set of events and classify them
+                # Finally the time_diff is default 0 for the last event since there is no event following it, hence we need to remove it
+                existing_events.pop()
+                existing_time_diffs.pop()
+                # append the new events and time_diffs
+                existing_events.extend(classified_events)
+                existing_time_diffs.extend(time_diff_events)
+                sale_notif_session.events_category_list = existing_events
+                sale_notif_session.time_diff_list = existing_time_diffs
+                sale_notif_session.event_sequence_length = len(existing_events)
+                # save the last event in the session
+                serializer = EventSerializer(session_events[-1])
+                sale_notif_session.last_event = serializer.data
+                try:
+                    sale_notif_session.save()
+                except Exception as e:
+                    logger.info(f"Failed to save new sale notification session: {session_key} - {str(e)}")
+    except:
+        logger.info("Exception creating sale notification session: " + session_key)
+
+    connections.close_all()
 
 
 @shared_task

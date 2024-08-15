@@ -46,6 +46,11 @@ curl -X POST https://almeapp.com/events \
 # accept post requests from the xhttp request and save the data to the database
 @csrf_exempt
 def events(request):
+    try:
+        json.loads(request.body)
+    except json.JSONDecodeError:
+        logger.info(f"Invalid JSON data: {request.body}")
+        logger.info(f"Request headers: {request.headers}")
     
     if request.method == 'GET':
         return HttpResponse(" This is the events url. Please send a post request to this url")

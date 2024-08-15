@@ -1,5 +1,17 @@
 from django.db import models
+import os
+from django.conf import settings
+from django.forms.models import model_to_dict
+from clickserver.model_loader import get_model
 
+global_label_encoder = None
+
+def get_label_encoder():
+    global_label_encoder = get_model('global_label_encoder')
+    if global_label_encoder is None:
+        raise ValueError("Global label encoder not found. Please ensure it's loaded correctly.")
+    
+    return global_label_encoder
 
 # create item model
 class Item(models.Model):
@@ -117,4 +129,34 @@ class Sessions(models.Model):
     time_spent_product_pages = models.FloatField(null=True) # time spent on product pages in seconds
     session_duration = models.FloatField(null=True) # in seconds
     logged_time = models.DateTimeField(auto_now_add=True,null=True,db_index=True)
+
+class SaleNotificationSessions(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE,null=True)
+    is_active = models.BooleanField(null=True,default=True,db_index=True)
+    app_name = models.CharField(max_length=255,null=True,db_index=True)
+    session_key = models.CharField(max_length=255,null=False,db_index=True,unique=True)
+    experiment_group = models.CharField(max_length=32, default='control', db_index=True)
+    events_category_list = models.JSONField(null=True)
+    time_diff_list = models.JSONField(null=True)
+    encoded_events_category_list = models.JSONField(null=True) # encoded events category list
+    encoded_time_diff_list = models.JSONField(null=True) # encoded time difference list, for future use to maintain categorization
+    has_purchased = models.BooleanField(null=True)
+    event_sequence_length = models.IntegerField(null=True)
+    last_event = models.JSONField(null=True)
+    logged_time = models.DateTimeField(auto_now_add=True,null=True,db_index=True)
+
+    class Meta:
+        db_table = 'sale_notification_sessions'  
+        unique_together = ('session_key', 'app_name')
+
+    def encode_events(self):
+        if self.events_category_list:
+            encoder = get_label_encoder()
+            self.encoded_events_category_list = encoder.transform(self.events_category_list).tolist()
+            self.event_sequence_length = len(self.events_category_list)
+
+    def save(self, *args, **kwargs):
+        self.encode_events()
+        super().save(*args, **kwargs)
+
 

@@ -1,6 +1,8 @@
 from pathlib import Path
 from apiresult.utils.config import TIME_CHUNK
 
+
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -28,6 +30,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'clickserver',
     'events',
     'corsheaders',
     'rest_framework',
@@ -74,22 +77,13 @@ SESSION_SAVE_EVERY_REQUEST = True
 SESSION_COOKIE_SAMESITE = 'None'
 SESSION_COOKIE_SECURE = True
 
-# Database
-# https://docs.djangoproject.com/en/4.1/ref/settings/#databases
-
-#DATABASES = {
-#    'default': {
-#        'ENGINE': 'django.db.backends.sqlite3',
-#        'NAME': BASE_DIR / 'db.sqlite3',
-#    }
-#}
 
 DATABASES = {
         'default': {
             'ENGINE':'django.db.backends.mysql',
-            'OPTIONS':{
-               'read_default_file':'/home/ubuntu/clickstream/auth/mysql.cnf'
-            },
+            # 'OPTIONS':{
+            #    'read_default_file':'/home/ubuntu/clickstream/auth/mysql.cnf'
+            # },
             # 'NAME':'events',
             # 'USER':'root',
             # 'PASSWORD':'nexarc@123',
@@ -97,14 +91,30 @@ DATABASES = {
             # 'HOST':'localhost',
             # 'PORT':'3306',
             
-            # 'NAME':'events_replica',
-            # 'USER':'localuser',
-            # 'PASSWORD':'password',
-            # #ip address of the database
-            # 'HOST':'localhost',
-            # 'PORT':'3306',
+            'NAME':'events_replica',
+            'USER':'localuser',
+            'PASSWORD':'password',
+            #ip address of the database
+            'HOST':'localhost',
+            'PORT':'3306',
+            'TEST': {
+                'NAME': 'events', 
+                },
+            },
+        'test': {
+            'ENGINE':'django.db.backends.mysql',
+            'NAME':'events',
+            'USER':'localuser',
+            'PASSWORD':'password',
+            'HOST':'localhost',
+            'PORT':'3306',
             },
         }
+
+# Prevent database deletion after TransactionTestCase
+TEST_NON_SERIALIZED_APPS = ['all']
+TEST_RUNNER = 'django.test.runner.DiscoverRunner'
+TEST_KEEP_DATABASE = True
 
 LOGGING = {
     'version': 1,
@@ -119,8 +129,8 @@ LOGGING = {
         'file': {
             'level': 'INFO',
             'class': 'logging.FileHandler',
-            'filename': '/home/ubuntu/clickstream/django/clickserver/logs/info.log', 
-            #'filename': '/Users/adityaganguli/alme/staging/clickstream_server/django/clickserver/logs/info.log',
+            #'filename': '/home/ubuntu/clickstream/django/clickserver/logs/info.log', 
+            'filename': '/Users/adityaganguli/alme/staging/clickstream_server/django/clickserver/logs/info.log',
             'formatter': 'standard',
         },
     },
@@ -217,6 +227,7 @@ EMAIL_HOST_PASSWORD = 'Circuit@123'  # Your Zoho password
 #     }
 # }
 
-TEST_RUNNER = 'apiresult.test_runner.NoDbTestRunner'
+
+
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
