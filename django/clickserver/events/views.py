@@ -15,6 +15,7 @@ from apiresult.utils.config import *
 from apiresult.models import *
 import hashlib
 
+
 #Example usage
 '''
 curl -X POST https://almeapp.com/events \
@@ -46,6 +47,7 @@ curl -X POST https://almeapp.com/events \
 # accept post requests from the xhttp request and save the data to the database
 @csrf_exempt
 def events(request):
+
     if request.method == 'GET':
         return HttpResponse(" This is the events url. Please send a post request to this url")
     if request.method == 'POST':

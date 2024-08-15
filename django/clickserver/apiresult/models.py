@@ -1,8 +1,11 @@
+#apiresult/models.py
 from django.db import models
 import os
 from django.conf import settings
 from django.forms.models import model_to_dict
-from clickserver.model_loader import get_model
+from clickserver.model_loader import get_model,global_models,load_all_models
+import logging
+logger = logging.getLogger(__name__)
 
 global_label_encoder = None
 
@@ -12,6 +15,15 @@ def get_label_encoder():
         raise ValueError("Global label encoder not found. Please ensure it's loaded correctly.")
     
     return global_label_encoder
+
+# load all deep learning models if not loaded yet
+if not global_models:
+    load_all_models()
+    logger.info(f"Models loaded successfullyin apiresult/models.py")
+else:
+    logger.info(f"Models already loaded in apiresult/models.py")
+
+
 
 # create item model
 class Item(models.Model):
