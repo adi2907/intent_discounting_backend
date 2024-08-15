@@ -1,10 +1,15 @@
 # clickserver/apps.py
 from django.apps import AppConfig
+import logging
+logger = logging.getLogger(__name__)
 
 class ClickserverConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'clickserver'
 
     def ready(self):
-        from . import model_loader
-        model_loader.load_all_models()
+        from clickserver.model_loader import load_all_models
+        try:
+            load_all_models()
+        except Exception as e:
+            logger.info(f"Error loading models: {e}")
