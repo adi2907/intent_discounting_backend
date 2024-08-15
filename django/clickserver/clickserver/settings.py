@@ -81,9 +81,9 @@ SESSION_COOKIE_SECURE = True
 DATABASES = {
         'default': {
             'ENGINE':'django.db.backends.mysql',
-            # 'OPTIONS':{
-            #    'read_default_file':'/home/ubuntu/clickstream/auth/mysql.cnf'
-            # },
+            'OPTIONS':{
+               'read_default_file':'/home/ubuntu/clickstream/auth/mysql.cnf'
+            },
             # 'NAME':'events',
             # 'USER':'root',
             # 'PASSWORD':'nexarc@123',
@@ -91,24 +91,24 @@ DATABASES = {
             # 'HOST':'localhost',
             # 'PORT':'3306',
             
-            'NAME':'events_replica',
-            'USER':'localuser',
-            'PASSWORD':'password',
-            #ip address of the database
-            'HOST':'localhost',
-            'PORT':'3306',
-            'TEST': {
-                'NAME': 'events', 
-                },
+            # 'NAME':'events_replica',
+            # 'USER':'localuser',
+            # 'PASSWORD':'password',
+            # #ip address of the database
+            # 'HOST':'localhost',
+            # 'PORT':'3306',
+            # 'TEST': {
+            #     'NAME': 'events', 
+            #     },
             },
-        'test': {
-            'ENGINE':'django.db.backends.mysql',
-            'NAME':'events',
-            'USER':'localuser',
-            'PASSWORD':'password',
-            'HOST':'localhost',
-            'PORT':'3306',
-            },
+        # 'test': {
+        #     'ENGINE':'django.db.backends.mysql',
+        #     'NAME':'events',
+        #     'USER':'localuser',
+        #     'PASSWORD':'password',
+        #     'HOST':'localhost',
+        #     'PORT':'3306',
+        #     },
         }
 
 # Prevent database deletion after TransactionTestCase
@@ -129,8 +129,8 @@ LOGGING = {
         'file': {
             'level': 'INFO',
             'class': 'logging.FileHandler',
-            #'filename': '/home/ubuntu/clickstream/django/clickserver/logs/info.log', 
-            'filename': '/Users/adityaganguli/alme/staging/clickstream_server/django/clickserver/logs/info.log',
+            'filename': '/home/ubuntu/clickstream/django/clickserver/logs/info.log', 
+            #'filename': '/Users/adityaganguli/alme/staging/clickstream_server/django/clickserver/logs/info.log',
             'formatter': 'standard',
         },
     },
