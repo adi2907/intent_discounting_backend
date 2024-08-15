@@ -19,7 +19,7 @@ def get_label_encoder():
 # load all deep learning models if not loaded yet
 if not global_models:
     load_all_models()
-    logger.info(f"Models loaded successfullyin apiresult/models.py")
+    logger.info(f"Models loaded successfully in apiresult/models.py")
 else:
     logger.info(f"Models already loaded in apiresult/models.py")
 
@@ -168,7 +168,10 @@ class SaleNotificationSessions(models.Model):
             self.event_sequence_length = len(self.events_category_list)
 
     def save(self, *args, **kwargs):
+        session = model_to_dict(self)
+        print(f"Before encoding: {session.get('session_key')}")
         self.encode_events()
+        print(f"After encoding: {session.get('session_key')}")
         super().save(*args, **kwargs)
 
 

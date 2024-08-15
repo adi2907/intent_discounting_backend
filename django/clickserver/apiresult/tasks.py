@@ -192,7 +192,7 @@ def update_sessions(session_keys, events_data, app_name):
 
 @shared_task
 def update_individual_session(session_key, events_data, app_name):
-    session_events = events_data
+    session_events = [event for event in events_data if event['session'] == session_key]
     if not session_events:
         return
 
@@ -310,7 +310,7 @@ def get_session_variables(session_events,app_name):
 @shared_task
 def update_sale_notif_session(session_key, events_data, app_name):
     try:
-        session_events = events_data
+        session_events = [event for event in events_data if event['session'] == session_key]
         if not session_events:
             return
         user_token = session_events[0]['token']
