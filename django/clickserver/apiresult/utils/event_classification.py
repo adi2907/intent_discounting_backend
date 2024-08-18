@@ -32,22 +32,6 @@ def event_classifier(session_events,app_name):
         next_product_id = session_events[i+1]['product_id'] if i+1 < len(session_events) else None
         
         if event['event_type'] == 'click':
-            if 'collections' in str(event['source_url']).lower() and next_product_id:
-                classified_events.append('catalog_to_product_click')
-                continue
-            elif 'collections' in str(event['source_url']).lower():
-                classified_events.append('catalog_page_click')
-                continue
-            elif 'buy it now' in str(event['click_text']).lower() or 'checkout' in str(event['click_text']).lower():
-                classified_events.append('buy_event_click')
-                continue
-            elif event['product_id']:
-                classified_events.append('product_page_click')
-                continue
-            elif 'account' in str(event['source_url']).lower():
-                classified_events.append('account_page_click')
-                continue
-
             # for add to cart, home page or search page clicks
             if app_name == 'desisandook.myshopify.com':
                 if 'add to cart' in str(event['click_text']).lower():
@@ -65,29 +49,35 @@ def event_classifier(session_events,app_name):
                     if session_events[i+1]['source_url'] == 'https://www.sujatra.com/cart':
                         classified_events.append('add_cart_click')
                         continue
-                elif str(event['source_url']).lower() == 'https://www.sujatra.com/':
+                if str(event['source_url']).lower() == 'https://www.sujatra.com/':
                     classified_events.append('home_page_click')
                     continue
                 elif str(event['source_url']).lower() == 'https://www.sujatra.com/search':
                     classified_events.append('search_page_click')
                     continue
+
+            if 'buy it now' in str(event['click_text']).lower() or 'checkout' in str(event['click_text']).lower():
+                classified_events.append('buy_event_click')
+                continue
+            elif 'collections' in str(event['source_url']).lower() and next_product_id:
+                classified_events.append('catalog_to_product_click')
+                continue
+            elif 'collections' in str(event['source_url']).lower():
+                classified_events.append('catalog_page_click')
+                continue
+            
+            elif event['product_id']:
+                classified_events.append('product_page_click')
+                continue
+            elif 'account' in str(event['source_url']).lower():
+                classified_events.append('account_page_click')
+                continue
+
+            
             classified_events.append('other_click')
             continue
             
         elif event['event_type'] == 'page_load':
-            if event['product_id']:
-                classified_events.append('product_visit')
-                continue
-            elif 'collections' in str(event['source_url']).lower():
-                classified_events.append('catalog_page_visit')
-                continue
-            elif 'cart' in str(event['source_url']).lower():
-                classified_events.append('cart_page_visit')
-                continue
-            elif 'account' in str(event['source_url']).lower():
-                classified_events.append('account_page_visit')
-                continue
-
             if app_name == 'desisandook.myshopify.com':
                 if str(event['source_url']).lower() == 'https://www.desisandook.com/':
                     classified_events.append('home_page_visit')
@@ -102,6 +92,20 @@ def event_classifier(session_events,app_name):
                 elif str(event['source_url']).lower() == 'https://www.sujatra.com/search':
                     classified_events.append('search_page_visit')
                     continue
+
+            if event['product_id']:
+                classified_events.append('product_visit')
+                continue
+            elif 'collections' in str(event['source_url']).lower():
+                classified_events.append('catalog_page_visit')
+                continue
+            elif 'cart' in str(event['source_url']).lower():
+                classified_events.append('cart_page_visit')
+                continue
+            elif 'account' in str(event['source_url']).lower():
+                classified_events.append('account_page_visit')
+                continue
+
             classified_events.append('other_page_visit')
             continue
 
