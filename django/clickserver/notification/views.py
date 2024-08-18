@@ -15,14 +15,14 @@ import numpy as np
 import logging
 logger = logging.getLogger(__name__)
 
-from clickserver.model_loader import global_models,get_model,load_all_models
+# from clickserver.model_loader import global_models,get_model,load_all_models
 
-def initialize_models():
-    if not global_models:
-        load_all_models()
-        logger.info("Models loaded successfully in notification/views.py")
-    else:
-        logger.info("Models already loaded in notification/views.py")
+# def initialize_models():
+#     if not global_models:
+#         load_all_models()
+#         logger.info("Models loaded successfully in notification/views.py")
+#     else:
+#         logger.info("Models already loaded in notification/views.py")
 
 
 class SubmitContactView(APIView):
