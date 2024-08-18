@@ -322,7 +322,7 @@ def update_sale_notif_session(session_key, events_data, app_name):
             sale_notif_session = SaleNotificationSessions.objects.filter(session_key=session_key,app_name=app_name).first()
 
             if not sale_notif_session:
-                # create a new sale notification session
+                #create a new sale notification session
                 sale_notif_session = SaleNotificationSessions(session_key=session_key,app_name=app_name)
                 try:
                     user = User.objects.get(token=user_token, app_name=app_name)
@@ -351,7 +351,6 @@ def update_sale_notif_session(session_key, events_data, app_name):
                 except Exception as e:
                     logger.info(f"Failed to save new sale notification session: {session_key} - {str(e)}")
             else:
-                logger.info("Extending existing sale notification session")
                 # append the last event of the session to the session_events at the beginning and pass to the classifier
                 session_events.insert(0,sale_notif_session.last_event)
                 classified_events,time_diff_events= event_classifier(session_events,app_name)

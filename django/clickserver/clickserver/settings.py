@@ -30,7 +30,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    #'clickserver',
+    'clickserver',
     'events',
     'corsheaders',
     'rest_framework',
@@ -101,14 +101,14 @@ DATABASES = {
             #     'NAME': 'events', 
             #     },
             },
-        # 'test': {
-        #     'ENGINE':'django.db.backends.mysql',
-        #     'NAME':'events',
-        #     'USER':'localuser',
-        #     'PASSWORD':'password',
-        #     'HOST':'localhost',
-        #     'PORT':'3306',
-        #     },
+        'test': {
+            'ENGINE':'django.db.backends.mysql',
+            'NAME':'events',
+            'USER':'localuser',
+            'PASSWORD':'password',
+            'HOST':'localhost',
+            'PORT':'3306',
+            },
         }
 
 # Prevent database deletion after TransactionTestCase

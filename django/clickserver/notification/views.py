@@ -83,9 +83,6 @@ class SubmitContactView(APIView):
     
 class NewSaleNotificationView(APIView):
     def get(self,request):
-        logger.info("Sale notification request received")
-        # log the payload
-        logger.info("Payload: %s" % request.query_params)
         
         token = self.request.query_params.get('token', None)
         app_name = self.request.query_params.get('app_name', None)
@@ -95,47 +92,53 @@ class NewSaleNotificationView(APIView):
             logger.info("Error in sale notification: token, app_name, session_id must be specified")
             logger.info("token: %s, app_name: %s, session_id: %s" % (token, app_name, session_key))
             return Response({'error': 'token, app_name, session_id must be specified'})
-
-        # # Using only the latest available session and not the session sent by the javascript client
-        # TODO: BELOW CODE SHOULD BE ENABLED IN PROD
-        # try:
-        #     # Get the user based on the token and app_name
-        #     user = User.objects.get(token=token, app_name=app_name)
-
-        #     # Get the most recent active session for this user
-        #     session = Sessions.objects.filter(
-        #         user=user,
-        #         app_name=app_name,
-        #         is_active=True
-        #     ).order_by('-session_start').first()
-
-        #     if not session:
-        #         logger.info(f"Error in sale notification: no active session found for user with token: {token}, app_name: {app_name}")
-        #         return Response({'error': 'no active session found'})
-
-        # except User.DoesNotExist:
-        #     logger.info(f"Error in sale notification: user not found for token: {token}, app_name: {app_name}")
-        #     return Response({'error': 'user not found'})
-        # except Exception as e:
-        #     logger.info(f"Error in sale notification: {str(e)}")
-        #     return Response({'error': 'An unexpected error occurred'})
-        # # Check if there's any criteria for the user
         
-        # get the SaleNotificationSession from the session_key
-        #new_session_key = session.session_key
-        new_session_key = session_key
-        sale_notification_session = SaleNotificationSessions.objects.filter(session_key=new_session_key).first()
-        # TODO: BELOW CODE SHOULD BE ENABLED IN PROD
-        # if sale_notification_session is None:
-        #     new_session_key = session_key
-        #     # use the older session key instead
-        #     sale_notification_session = SaleNotificationSessions.objects.filter(session_key=new_session_key).first()
+        sale_notification_session = SaleNotificationSessions.objects.filter(session_key=session_key).first()
+        if sale_notification_session is None:
+            logger.info("Error in sale notification: session not found")
+            return Response({'error': 'session not found'})
         
         # check if number of events in sale_notification_session is more than 10
         if sale_notification_session.event_sequence_length < 10:
             return Response({'sale_notification': False})
         
-        '''
+        #TODO: BELOW CODE NEEDS TO BE ENABLED AFTER TESTING
+        user = sale_notification_session.user
+        if user is None:
+            logger.info("Error in sale notification: user not found")
+            return Response({'error': 'user not found'})
+        #check if the user meets the criteria
+
+        meets_criteria = meets_criteria(user,app_name)
+        if not meets_criteria:
+           return Response({'sale_notification': False,'criteria_met': False})
+
+        show_notification = predict_sale_notification(sale_notification_session)
+        return Response({'sale_notification': show_notification})
+
+def predict_sale_notification(sale_notification_session):
+    MAX_SEQUENCE_LENGTH = 10
+    model = get_model('desisandook.myshopify.com_model')
+    sequence_length = min(sale_notification_session.event_sequence_length, MAX_SEQUENCE_LENGTH)
+    X_event_category = np.array(sale_notification_session.encoded_events_category_list[-sequence_length:])
+    X_time_spent = np.array(sale_notification_session.time_diff_list[-sequence_length:])
+
+    # Reshape the input to match the model's expected input shape
+    X = np.stack([X_event_category, X_time_spent], axis=-1)
+    X = X.reshape(1, sequence_length, 2)  # Add batch dimension
+
+    try:
+        prob_prediction = model.predict(X)
+    except Exception as e:
+        logger.error(f"Model prediction failed: {str(e)}")
+        return False
+
+    threshold = 0.3  # Adjust based on your needs
+    show_notification = prob_prediction[0, 1] < threshold
+    logger.info(f"Session: {sale_notification_session.session_key} Prediction probability: {prob_prediction[0, 1]}, Threshold: {threshold}, Show notification: {show_notification}")
+    return show_notification
+
+def meets_criteria(user,app_name):
         cache_key = f'sale_notification_criteria_{app_name}'
         criteria = cache.get(cache_key)
         if criteria is None:
@@ -156,32 +159,16 @@ class NewSaleNotificationView(APIView):
                 if latest_purchase_date is not None:
                     # check if the last purchase date is within the days_since_last_purchase
                     if (datetime.now() - latest_purchase_date.created_at).days <= days_since_last_purchased:
-                        return Response({'sale_notification': False,'criteria_met': False})
+                        return False
             # check days_since_last_visit
             if criteria.days_since_last_visit is not None:
                 days_since_last_visit = criteria.days_since_last_visit
                 if (datetime.now() - user.last_visit).days <= days_since_last_visit:
-                    return Response({'sale_notification': False,'criteria_met': False})
-        '''
-        # LSTM prediction
-        model = get_model('desisandook.myshopify.com_model')
-        # Get the actual sequence length
-        sequence_length = sale_notification_session.event_sequence_length
+                    #return Response({'sale_notification': False,'criteria_met': False})
+                    return False
+        return True
 
-        # Prepare input data without padding
-        X_event_category = np.array(sale_notification_session.encoded_events_category_list)
-        X_time_spent = np.array(sale_notification_session.time_diff_list)
 
-            # Reshape the input to match the model's expected input shape
-        X = np.stack([X_event_category, X_time_spent], axis=-1)
-        X = X.reshape(1, sequence_length, 2)  # Add batch dimension
-
-        prob_prediction = model.predict(X)
-        threshold = 0.3  # Adjust based on your needs
-        show_notification = prob_prediction[0, 1] < threshold
-        logger.info(f"Session: {new_session_key} Prediction probability: {prob_prediction[0, 1]}, Threshold: {threshold}, Show notification: {show_notification}")
-
-        return Response({'sale_notification': show_notification})
 
 
 class SaleNotificationView(APIView):

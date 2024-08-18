@@ -10,6 +10,10 @@ from apiresult.utils.event_classification import event_classifier
 import csv
 from django.test import TransactionTestCase
 from notification.views import NewSaleNotificationView
+from rest_framework.test import APIRequestFactory
+from django.urls import reverse
+import logging
+logger = logging.getLogger(__name__)
 
 def get_events_for_period(start_time, end_time):
     events = Event.objects.filter(
@@ -49,23 +53,34 @@ def group_events(events):
     return grouped_events
 
 class TestSaleNotification(TransactionTestCase):
+    def setUp(self):
+        self.factory = APIRequestFactory()
+    
     def test_integration(self):
-
-        # get events in batches of 1 min each
-        for i in range(1, 10):
-            start_time = datetime(2024, 8, 7, 13, i, 0, 0)
-            end_time = datetime(2024, 8, 7, 13, i+1, 0, 0)
-            events = get_events_for_period(start_time, end_time)
-            grouped_events = group_events(events)
-            # create sale notification sessions
-            for key,events in grouped_events.items():
-                session_key, app_name = key
-                update_sale_notif_session(session_key, events, app_name)
             
-            # read all the active sale notification sessions
-            sessions = SaleNotificationSessions.objects.all()
+        # read all the active sale notification sessions
+        sessions = SaleNotificationSessions.objects.all()
+        print(f"Length of sessions is {len(sessions)}")
 
-            # Pass this to the view
-            
+        # Pass this to the view
+        for session in sessions:
+            url = reverse('new-sale-notification')
+            request = self.factory.get(url,{
+                'token': 'test_token',
+                'app_name': session.app_name,
+                'session_id': session.session_key,
+            })
 
-        
+            view = NewSaleNotificationView.as_view()
+            response = view(request)
+
+            if session.event_sequence_length < 10:
+                self.assertFalse(response.data['sale_notification'])
+            else:
+                # log the response for the session
+                logger.info(f"Session: {session.session_key}, Sale Notification: {response.data['sale_notification']}")
+
+                
+                
+
+               

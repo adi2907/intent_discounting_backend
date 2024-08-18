@@ -12,7 +12,7 @@ global_models = {}
 def load_all_models():
     global global_models
     models_dir = os.path.join(settings.BASE_DIR, 'clickserver', 'models')
-
+    
     try:
         for filename in os.listdir(models_dir):
             if filename.endswith('.pkl'):
