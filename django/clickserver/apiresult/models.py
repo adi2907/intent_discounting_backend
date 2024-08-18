@@ -17,11 +17,11 @@ def get_label_encoder():
     return global_label_encoder
 
 # load all deep learning models if not loaded yet
-if not global_models:
-    load_all_models()
-    logger.info(f"Models loaded successfully in apiresult/models.py")
-else:
-    logger.info(f"Models already loaded in apiresult/models.py")
+# if not global_models:
+#     load_all_models()
+#     logger.info(f"Models loaded successfully in apiresult/models.py")
+# else:
+#     logger.info(f"Models already loaded in apiresult/models.py")
 
 
 
