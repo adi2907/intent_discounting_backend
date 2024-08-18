@@ -24,6 +24,23 @@ logger = logging.getLogger(__name__)
 #     else:
 #         logger.info("Models already loaded in notification/views.py")
 
+global_prediction_model = None
+
+def get_prediction_model():
+    global global_prediction_model
+    if global_prediction_model is None:
+        try:
+            model_path = '/home/ubuntu/clickstream/django/clickserver/clickserver/models/desisandook.myshopify.com_model.pkl'
+            with open(model_path,'rb') as f:
+                global_prediction_model = pickle.load(f)
+            logger.info("Predication model desisandook loaded successfully in notification/views.py")
+
+        except Exception as e:
+            logger.info("Error loading desisandook.myshopify.com_model: {e}")
+            global_label_encoder = None
+    return global_label_encoder
+
+
 
 class SubmitContactView(APIView):
     def post(self,request):
@@ -116,7 +133,7 @@ class NewSaleNotificationView(APIView):
 
 def predict_sale_notification(sale_notification_session):
     MAX_SEQUENCE_LENGTH = 10
-    model = get_model('desisandook.myshopify.com_model')
+    model = get_prediction_model()
     sequence_length = min(sale_notification_session.event_sequence_length, MAX_SEQUENCE_LENGTH)
     X_event_category = np.array(sale_notification_session.encoded_events_category_list[-sequence_length:])
     X_time_spent = np.array(sale_notification_session.time_diff_list[-sequence_length:])

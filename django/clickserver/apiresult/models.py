@@ -2,19 +2,33 @@
 from django.db import models
 import os
 from django.conf import settings
+import pickle
 from django.forms.models import model_to_dict
-from clickserver.model_loader import get_model,global_models,load_all_models
+#from clickserver.model_loader import get_model,global_models,load_all_models
 import logging
 logger = logging.getLogger(__name__)
 
 global_label_encoder = None
-
 def get_label_encoder():
-    global_label_encoder = get_model('global_label_encoder')
+    global global_label_encoder
     if global_label_encoder is None:
-        raise ValueError("Global label encoder not found. Please ensure it's loaded correctly.")
-    
+        try:
+            model_path = '/home/ubuntu/clickstream/django/clickserver/clickserver/models/global_label_encoder.pkl'
+            with open(model_path,'rb') as f:
+                global_label_encoder = pickle.load(f)
+            logger.info("Label encoder loaded successfully in apiresult/models.py")
+
+        except Exception as e:
+            logger.info("Error loading label encoder: {e}")
+            global_label_encoder = None
     return global_label_encoder
+
+# def get_label_encoder():
+#     global_label_encoder = get_model('global_label_encoder')
+#     if global_label_encoder is None:
+#         raise ValueError("Global label encoder not found. Please ensure it's loaded correctly.")
+    
+#     return global_label_encoder
 
 # #load all deep learning models if not loaded yet
 # if not global_models:
@@ -22,6 +36,8 @@ def get_label_encoder():
 #     logger.info(f"Models loaded successfully in apiresult/models.py")
 # else:
 #     logger.info(f"Models already loaded in apiresult/models.py")
+
+
 
 
 
@@ -164,8 +180,15 @@ class SaleNotificationSessions(models.Model):
     def encode_events(self):
         if self.events_category_list:
             encoder = get_label_encoder()
-            self.encoded_events_category_list = encoder.transform(self.events_category_list).tolist()
-            self.event_sequence_length = len(self.events_category_list)
+            if encoder is None:
+                logger.info("Label encoder is not available for session_key %s", self.session_key)
+                return
+            try: 
+                self.encoded_events_category_list = encoder.transform(self.events_category_list).tolist()
+                self.event_sequence_length = len(self.events_category_list)
+            except Exception as e:
+                logger.info("Error encoding events for session_key %s: %s", self.session_key, e)
+                return
 
     def save(self, *args, **kwargs):
         self.encode_events()
