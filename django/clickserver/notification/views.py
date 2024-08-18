@@ -25,8 +25,6 @@ def initialize_models():
         logger.info("Models already loaded in notification/views.py")
 
 
-
-
 class SubmitContactView(APIView):
     def post(self,request):
         data = json.loads(request.body)
