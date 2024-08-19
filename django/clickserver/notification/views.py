@@ -100,6 +100,7 @@ def meets_criteria(user,app_name):
         cache_key = f'sale_notification_criteria_{app_name}'
         criteria = cache.get(cache_key)
         if criteria is None:
+            logger.info("Criteria is none")
             # Criteria values not found in cache, fetch from the database
             try:
                 criteria = SaleNotificationCriteria.objects.get(app_name=app_name)
@@ -109,6 +110,7 @@ def meets_criteria(user,app_name):
                 cache.set(cache_key, '0', timeout=3600)
         
         if criteria != '0':
+            logger.info(criteria)
             # check days_since_last_purchase
             if criteria.days_since_last_purchase is not None:
                 days_since_last_purchased = criteria.days_since_last_purchase
@@ -153,7 +155,7 @@ class NewSaleNotificationView(APIView):
             logger.info("Error in sale notification: user not found")
             return Response({'error': 'user not found'})
         #check if the user meets the criteria
-        logger.info("User for this session is {}".format(user))
+        logger.info("User for this session is {0} for app_name {1}".format(user.id,app_name))
         meets_criteria = meets_criteria(user,app_name)
         if not meets_criteria:
            return Response({'sale_notification': False,'criteria_met': False})
@@ -182,38 +184,6 @@ def predict_sale_notification(sale_notification_session):
     show_notification = prob_prediction[0, 1] < threshold
     logger.info(f"Session: {sale_notification_session.session_key} Prediction probability: {prob_prediction[0, 1]}, Threshold: {threshold}, Show notification: {show_notification}")
     return show_notification
-
-def meets_criteria(user,app_name):
-        cache_key = f'sale_notification_criteria_{app_name}'
-        criteria = cache.get(cache_key)
-        if criteria is None:
-            # Criteria values not found in cache, fetch from the database
-            try:
-                criteria = SaleNotificationCriteria.objects.get(app_name=app_name)
-                cache.set(cache_key, criteria, timeout=3600)
-            except SaleNotificationCriteria.DoesNotExist:
-                # set the cache_key to 0
-                cache.set(cache_key, '0', timeout=3600)
-        
-        if criteria != '0':
-            # check days_since_last_purchase
-            if criteria.days_since_last_purchase is not None:
-                days_since_last_purchased = criteria.days_since_last_purchase
-                # find the last purchase date of the user
-                latest_purchase_date = Purchase.objects.filter(user=user).order_by('-created_at').first()
-                if latest_purchase_date is not None:
-                    # check if the last purchase date is within the days_since_last_purchase
-                    if (datetime.now() - latest_purchase_date.created_at).days <= days_since_last_purchased:
-                        return False
-            # check days_since_last_visit
-            if criteria.days_since_last_visit is not None:
-                days_since_last_visit = criteria.days_since_last_visit
-                if (datetime.now() - user.last_visit).days <= days_since_last_visit:
-                    #return Response({'sale_notification': False,'criteria_met': False})
-                    return False
-        return True
-
-
 
 
 class SaleNotificationView(APIView):
