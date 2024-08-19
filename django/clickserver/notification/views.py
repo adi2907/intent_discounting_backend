@@ -44,7 +44,6 @@ def meets_criteria(user,app_name):
         cache_key = f'sale_notification_criteria_{app_name}'
         criteria = cache.get(cache_key)
         if criteria is None:
-            logger.info("Criteria is none")
             # Criteria values not found in cache, fetch from the database
             try:
                 criteria = SaleNotificationCriteria.objects.get(app_name=app_name)
@@ -55,7 +54,6 @@ def meets_criteria(user,app_name):
                 return True
         
         if criteria != '0':
-            logger.info(criteria)
             # check days_since_last_purchase
             if criteria.days_since_last_purchase is not None:
                 days_since_last_purchased = criteria.days_since_last_purchase
@@ -82,7 +80,6 @@ class NewSaleNotificationView(APIView):
         if token is None or app_name is None or session_key is None: # respond with error
            
             logger.info("Error in sale notification: token, app_name, session_id must be specified")
-            logger.info("token: %s, app_name: %s, session_id: %s" % (token, app_name, session_key))
             return Response({'error': 'token, app_name, session_id must be specified'})
         
         sale_notification_session = SaleNotificationSessions.objects.filter(session_key=session_key).first()
@@ -94,13 +91,16 @@ class NewSaleNotificationView(APIView):
         if sale_notification_session.event_sequence_length < 10:
             return Response({'sale_notification': False})
         
+        # check if sale notification is part of control or experimental group
+        if sale_notification_session.experiment_group == 'control':
+            return Response({'sale_notification': False,'experiment_group': False})
+
         #TODO: BELOW CODE NEEDS TO BE ENABLED AFTER TESTING
         user = sale_notification_session.user
         if user is None:
             logger.info("Error in sale notification: user not found")
             return Response({'error': 'user not found'})
         #check if the user meets the criteria
-        logger.info("User for this session is {0} for app_name {1}".format(user.id,app_name))
         check_user_criteria = meets_criteria(user,app_name)
         if not check_user_criteria:
            return Response({'sale_notification': False,'criteria_met': False})
