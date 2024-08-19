@@ -37,8 +37,8 @@ def get_prediction_model():
 
         except Exception as e:
             logger.info("Error loading desisandook.myshopify.com_model: {e}")
-            global_label_encoder = None
-    return global_label_encoder
+            global_prediction_model = None
+    return global_prediction_model
 
 def meets_criteria(user,app_name):
         cache_key = f'sale_notification_criteria_{app_name}'
