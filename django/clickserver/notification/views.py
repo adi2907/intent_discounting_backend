@@ -52,6 +52,7 @@ def meets_criteria(user,app_name):
             except SaleNotificationCriteria.DoesNotExist:
                 # set the cache_key to 0
                 cache.set(cache_key, '0', timeout=3600)
+                return True
         
         if criteria != '0':
             logger.info(criteria)
