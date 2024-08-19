@@ -40,62 +40,6 @@ def get_prediction_model():
             global_label_encoder = None
     return global_label_encoder
 
-
-
-class SubmitContactView(APIView):
-    def post(self,request):
-        data = json.loads(request.body)
-        app_name = data.get('app_name')
-        alme_user_token = data.get('alme_user_token')
-        phone = data.get('phone')
-        name = data.get('name')
-        email = data.get('email', '')
-        
-        i_users = IdentifiedUser.objects.filter(app_name=app_name)
-        i_user = None
-        for u in i_users:
-            if alme_user_token in u.tokens:    
-                i_user = u
-                break
-        if i_user:
-            # user found, update name, email and phone number for IdentifiedUser
-            i_user.name = i_user.name or name
-            i_user.phone = i_user.phone or phone
-            i_user.email = i_user.email or email
-            i_user.last_visit = datetime.now()
-        else:
-            # create new IdentifiedUser
-            i_user = IdentifiedUser(
-                app_name=app_name,
-                name=name,
-                phone=phone,
-                email=email,
-                tokens=[alme_user_token],
-                created_at=datetime.now(),
-                last_visit=datetime.now()
-            )
-            
-
-        # try saving user else return error response
-        try:
-            i_user.save()
-        except Exception as e:
-            logger.info("Error in sending Alme contact details: %s" % str(e))
-            return Response({"Error in sending Alme contact details": str(e)})
-
-        user,created = User.objects.get_or_create(
-            app_name=app_name,
-            token = alme_user_token,
-            defaults={
-                'first_visit': datetime.now(),
-                'last_visit': datetime.now(),
-                'last_updated': datetime.now(),
-            }
-        )
-        user.identified_user_id = i_user.id
-        user.save()
-        return Response({"status": "success"}, status=200)
-    
 def meets_criteria(user,app_name):
         cache_key = f'sale_notification_criteria_{app_name}'
         criteria = cache.get(cache_key)
@@ -156,8 +100,8 @@ class NewSaleNotificationView(APIView):
             return Response({'error': 'user not found'})
         #check if the user meets the criteria
         logger.info("User for this session is {0} for app_name {1}".format(user.id,app_name))
-        meets_criteria = meets_criteria(user,app_name)
-        if not meets_criteria:
+        check_user_criteria = meets_criteria(user,app_name)
+        if not check_user_criteria:
            return Response({'sale_notification': False,'criteria_met': False})
 
         show_notification = predict_sale_notification(sale_notification_session)
@@ -184,6 +128,62 @@ def predict_sale_notification(sale_notification_session):
     show_notification = prob_prediction[0, 1] < threshold
     logger.info(f"Session: {sale_notification_session.session_key} Prediction probability: {prob_prediction[0, 1]}, Threshold: {threshold}, Show notification: {show_notification}")
     return show_notification
+
+
+class SubmitContactView(APIView):
+    def post(self,request):
+        data = json.loads(request.body)
+        app_name = data.get('app_name')
+        alme_user_token = data.get('alme_user_token')
+        phone = data.get('phone')
+        name = data.get('name')
+        email = data.get('email', '')
+        
+        i_users = IdentifiedUser.objects.filter(app_name=app_name)
+        i_user = None
+        for u in i_users:
+            if alme_user_token in u.tokens:    
+                i_user = u
+                break
+        if i_user:
+            # user found, update name, email and phone number for IdentifiedUser
+            i_user.name = i_user.name or name
+            i_user.phone = i_user.phone or phone
+            i_user.email = i_user.email or email
+            i_user.last_visit = datetime.now()
+        else:
+            # create new IdentifiedUser
+            i_user = IdentifiedUser(
+                app_name=app_name,
+                name=name,
+                phone=phone,
+                email=email,
+                tokens=[alme_user_token],
+                created_at=datetime.now(),
+                last_visit=datetime.now()
+            )
+            
+
+        # try saving user else return error response
+        try:
+            i_user.save()
+        except Exception as e:
+            logger.info("Error in sending Alme contact details: %s" % str(e))
+            return Response({"Error in sending Alme contact details": str(e)})
+
+        user,created = User.objects.get_or_create(
+            app_name=app_name,
+            token = alme_user_token,
+            defaults={
+                'first_visit': datetime.now(),
+                'last_visit': datetime.now(),
+                'last_updated': datetime.now(),
+            }
+        )
+        user.identified_user_id = i_user.id
+        user.save()
+        return Response({"status": "success"}, status=200)
+    
 
 
 class SaleNotificationView(APIView):
