@@ -96,7 +96,7 @@ def update_individual_user(user_token, events_data, app_name):
         logger.info("Exception creating user: " + user_token)
         return
     if created:
-        user.experiment_group = 'experimental' if random.random() < 0.5 else 'control'
+        user.experiment_group = 'control' if random.random() < 0.25 else 'experimental'
         user.save()
     connections.close_all()
 
@@ -212,7 +212,7 @@ def update_individual_session(session_key, events_data, app_name):
         experiment_group = user.experiment_group
         if not experiment_group:
             # assign a group to user randomly and save the user also
-            experiment_group = 'experimental' if random.random() < 0.5 else 'control'
+            experiment_group = 'control' if random.random() < 0.25 else 'experimental'
             user.experiment_group = experiment_group
             user.save()
         session.experiment_group = experiment_group
@@ -334,7 +334,7 @@ def update_sale_notif_session(session_key, events_data, app_name):
                 experiment_group = user.experiment_group
                 if not experiment_group:
                     # assign a group to user randomly and save the user also
-                    experiment_group = 'experimental' if random.random() < 0.5 else 'control'
+                    experiment_group = 'control' if random.random() < 0.25 else 'experimental'
                     user.experiment_group = experiment_group
                     user.save()
                 sale_notif_session.experiment_group = experiment_group
