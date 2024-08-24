@@ -11,6 +11,7 @@ from rest_framework.response import Response
 from apiresult.utils.config import *
 from datetime import datetime,timedelta
 import numpy as np
+import requests
 
 import logging
 logger = logging.getLogger(__name__)
@@ -24,21 +25,25 @@ logger = logging.getLogger(__name__)
 #     else:
 #         logger.info("Models already loaded in notification/views.py")
 
-global_prediction_model = None
+# global_prediction_model = None
+
+# def get_prediction_model():
+#     global global_prediction_model
+#     if global_prediction_model is None:
+#         try:
+#             model_path = '/home/ubuntu/clickstream/django/clickserver/clickserver/models/desisandook.myshopify.com_model.pkl'
+#             with open(model_path,'rb') as f:
+#                 global_prediction_model = pickle.load(f)
+#             logger.info("Predication model desisandook loaded successfully in notification/views.py")
+
+#         except Exception as e:
+#             logger.info("Error loading desisandook.myshopify.com_model: {e}")
+#             global_prediction_model = None
+#     return global_prediction_model
 
 def get_prediction_model():
-    global global_prediction_model
-    if global_prediction_model is None:
-        try:
-            model_path = '/home/ubuntu/clickstream/django/clickserver/clickserver/models/desisandook.myshopify.com_model.pkl'
-            with open(model_path,'rb') as f:
-                global_prediction_model = pickle.load(f)
-            logger.info("Predication model desisandook loaded successfully in notification/views.py")
-
-        except Exception as e:
-            logger.info("Error loading desisandook.myshopify.com_model: {e}")
-            global_prediction_model = None
-    return global_prediction_model
+    # Return the base URL for TensorFlow Serving
+    return "http://localhost:8502/v1/models/desisandook:predict"
 
 def meets_criteria(user,app_name):
         cache_key = f'sale_notification_criteria_{app_name}'
@@ -110,7 +115,8 @@ class NewSaleNotificationView(APIView):
 
 def predict_sale_notification(sale_notification_session):
     MAX_SEQUENCE_LENGTH = 10
-    model = get_prediction_model()
+    #model = get_prediction_model()
+    model_url = get_prediction_model()
     sequence_length = min(sale_notification_session.event_sequence_length, MAX_SEQUENCE_LENGTH)
     X_event_category = np.array(sale_notification_session.encoded_events_category_list[-sequence_length:])
     X_time_spent = np.array(sale_notification_session.time_diff_list[-sequence_length:])
@@ -119,10 +125,24 @@ def predict_sale_notification(sale_notification_session):
     X = np.stack([X_event_category, X_time_spent], axis=-1)
     X = X.reshape(1, sequence_length, 2)  # Add batch dimension
 
+     # Prepare data for TensorFlow Serving
+    data = {
+        "instances": X.tolist()  # Convert numpy array to list for JSON serialization
+    }
+
+
+    # try:
+    #     prob_prediction = model.predict(X)
+    # except Exception as e:
+    #     logger.error(f"Model prediction failed: {str(e)}")
+    #     return False
+
     try:
-        prob_prediction = model.predict(X)
+        response = requests.post(model_url,json=data)
+        response.raise_for_status()
+        prob_prediction = response.json()['predictions'][0]
     except Exception as e:
-        logger.error(f"Model prediction failed: {str(e)}")
+        logger.info(f"Model predidction failed: {str(e)}")
         return False
 
     threshold = 0.3  # Adjust based on your needs
