@@ -127,12 +127,9 @@ def predict_sale_notification(sale_notification_session):
 
     # Prepare data for TensorFlow Serving
     data = {
-        "instances": [
-            {
-                "inputs": X.tolist()  # Match the input tensor name and format
-            }
-        ]
+        "instances": [X.tolist()]  # Send the list
     }
+    logger.info(f"Prepared data to send to TensorFlow Serving: {json.dumps(data, indent=2)}")
 
 
     # try:
@@ -143,10 +140,14 @@ def predict_sale_notification(sale_notification_session):
 
     try:
         response = requests.post(model_url, json=data)
-        response.raise_for_status()
+        response.raise_for_status()  # This will raise an HTTPError for bad responses
+        logger.info(f"Response from TensorFlow Serving: {response.text}")
         prob_prediction = response.json()['predictions'][0]
+    except requests.exceptions.RequestException as e:
+        logger.info(f"RequestException during model prediction: {str(e)}")
+        return False
     except Exception as e:
-        logger.info(f"Model prediction failed: {str(e)}")
+        logger.info(f"Unexpected error during model prediction: {str(e)}")
         return False
 
     threshold = 0.3  # Adjust based on your needs
