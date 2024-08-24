@@ -125,9 +125,13 @@ def predict_sale_notification(sale_notification_session):
     X = np.stack([X_event_category, X_time_spent], axis=-1)
     X = X.reshape(1, sequence_length, 2)  # Add batch dimension
 
-     # Prepare data for TensorFlow Serving
+    # Prepare data for TensorFlow Serving
     data = {
-        "instances": X.tolist()  # Convert numpy array to list for JSON serialization
+        "instances": [
+            {
+                "inputs": X.tolist()  # Match the input tensor name and format
+            }
+        ]
     }
 
 
@@ -138,11 +142,11 @@ def predict_sale_notification(sale_notification_session):
     #     return False
 
     try:
-        response = requests.post(model_url,json=data)
+        response = requests.post(model_url, json=data)
         response.raise_for_status()
         prob_prediction = response.json()['predictions'][0]
     except Exception as e:
-        logger.info(f"Model predidction failed: {str(e)}")
+        logger.info(f"Model prediction failed: {str(e)}")
         return False
 
     threshold = 0.3  # Adjust based on your needs
