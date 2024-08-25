@@ -136,12 +136,15 @@ def predict_sale_notification(sale_notification_session):
     # except Exception as e:
     #     logger.error(f"Model prediction failed: {str(e)}")
     #     return False
-
+    threshold = 0.3
     try:
         response = requests.post(model_url, json=data)
         response.raise_for_status()  # This will raise an HTTPError for bad responses
         logger.info(f"Response from TensorFlow Serving: {response.text}")
         prob_prediction = response.json()['outputs'][0]
+        show_notification = prob_prediction[1] < threshold
+        logger.info(f"Session: {sale_notification_session.session_key} Prediction probability: {prob_prediction[1]}, Threshold: {threshold}, Show notification: {show_notification}")
+        return show_notification
     except requests.exceptions.RequestException as e:
         logger.info(f"RequestException during model prediction: {str(e)}")
         return False
@@ -149,10 +152,7 @@ def predict_sale_notification(sale_notification_session):
         logger.info(f"Unexpected error during model prediction: {str(e)}")
         return False
 
-    threshold = 0.3  # Adjust based on your needs
-    show_notification = prob_prediction[0, 1] < threshold
-    logger.info(f"Session: {sale_notification_session.session_key} Prediction probability: {prob_prediction[0, 1]}, Threshold: {threshold}, Show notification: {show_notification}")
-    return show_notification
+  
 
 
 class SubmitContactView(APIView):
