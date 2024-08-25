@@ -142,7 +142,7 @@ def predict_sale_notification(sale_notification_session):
         response = requests.post(model_url, json=data)
         response.raise_for_status()  # This will raise an HTTPError for bad responses
         logger.info(f"Response from TensorFlow Serving: {response.text}")
-        prob_prediction = response.json()['predictions'][0]
+        prob_prediction = response.json()['outputs'][0]
     except requests.exceptions.RequestException as e:
         logger.info(f"RequestException during model prediction: {str(e)}")
         return False
