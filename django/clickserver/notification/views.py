@@ -127,10 +127,10 @@ def predict_sale_notification(sale_notification_session):
 
     # Prepare data for TensorFlow Serving
     data = {
-        "inputs": [X.tolist()]  # Send the list
+        "inputs": X.tolist()  # Send the list
     }
     logger.info(f"Prepared data to send to TensorFlow Serving: {json.dumps(data, indent=2)}")
-
+    logger.info(data.shape)
 
     # try:
     #     prob_prediction = model.predict(X)
