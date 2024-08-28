@@ -129,7 +129,7 @@ def predict_sale_notification(sale_notification_session):
     data = {
         "inputs": X.tolist()  # Send the list
     }
-    logger.info(f"Prepared data to send to TensorFlow Serving: {json.dumps(data, indent=2)}")
+    #logger.info(f"Prepared data to send to TensorFlow Serving: {json.dumps(data, indent=2)}")
 
     # try:
     #     prob_prediction = model.predict(X)
@@ -140,7 +140,7 @@ def predict_sale_notification(sale_notification_session):
     try:
         response = requests.post(model_url, json=data)
         response.raise_for_status()  # This will raise an HTTPError for bad responses
-        logger.info(f"Response from TensorFlow Serving: {response.text}")
+        #logger.info(f"Response from TensorFlow Serving: {response.text}")
         prob_prediction = response.json()['outputs'][0]
         show_notification = prob_prediction[1] < threshold
         logger.info(f"Session: {sale_notification_session.session_key} Prediction probability: {prob_prediction[1]}, Threshold: {threshold}, Show notification: {show_notification}")
@@ -314,7 +314,29 @@ class SaleNotificationView(APIView):
         logger.info("Sale notification false")
         return Response({'sale_notification': False})
 
-   
+class TestSaleNotificationView(APIView):
+
+     def get(self,request):
+        logger.info("Sale notification request received")
+        # log the payload
+        logger.info("Payload: %s" % request.query_params)
+        token = self.request.query_params.get('token', None)
+        app_name = self.request.query_params.get('app_name', None)
+        session_key = self.request.query_params.get('session_id', None)  
+
+        if token is None or app_name is None or session_key is None: # respond with error
+           
+            logger.info("Error in sale notification: token, app_name, session_id must be specified")
+            logger.info("token: %s, app_name: %s, session_id: %s" % (token, app_name, session_key))
+            return Response({'error': 'token, app_name, session_id must be specified'})
+        
+        if session_key == '270a0b2bc2b0b37f25d9e9faa2a57fdd0190e1eb':
+            logger.info("Returned sale notification to Aditya")
+            return Response({'sale_notification': True})
+        else:
+            return Response({'sale_notification': False})
+        
+
   
 
 
