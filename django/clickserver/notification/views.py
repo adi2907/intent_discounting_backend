@@ -78,6 +78,9 @@ def meets_criteria(user,app_name):
 
 class NewSaleNotificationView(APIView):
     def get(self,request):
+        logger.info("Sale notification request received")
+        # log the payload
+        logger.info("Payload: %s" % request.query_params)
         
         token = self.request.query_params.get('token', None)
         app_name = self.request.query_params.get('app_name', None)
