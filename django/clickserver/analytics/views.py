@@ -176,7 +176,7 @@ Endpoint: https://almeapp.com/analytics/visit_conversion
 Parameters:
 days (optional, integer): Number of past days to include (default: 1).
 Response: JSON with dates as keys and objects containing purchases, total_sessions, and conversion_rate.
-Example Request: https://almeapp.com/analytics/visit-conversion?app_name=[YourAppName]&days=3
+Example Request: https://almeapp.com/analytics/visit_conversion?app_name=[YourAppName]&days=3
 
 Response Format:
 {

@@ -15,6 +15,7 @@ import requests
 
 import logging
 logger = logging.getLogger(__name__)
+MAX_SEQUENCE_LENGTH = 5
 
 # from clickserver.model_loader import global_models,get_model,load_all_models
 
@@ -92,8 +93,8 @@ class NewSaleNotificationView(APIView):
             logger.info("Error in sale notification: session not found")
             return Response({'error': 'session not found'})
         
-        # check if number of events in sale_notification_session is more than 10
-        if sale_notification_session.event_sequence_length < 10:
+        # check if number of events in sale_notification_session is more than max_sequence_length
+        if sale_notification_session.event_sequence_length < MAX_SEQUENCE_LENGTH:
             return Response({'sale_notification': False})
         
         # check if sale notification is part of control or experimental group
@@ -114,7 +115,7 @@ class NewSaleNotificationView(APIView):
         return Response({'sale_notification': show_notification})
 
 def predict_sale_notification(sale_notification_session):
-    MAX_SEQUENCE_LENGTH = 10
+
     #model = get_prediction_model()
     model_url = get_prediction_model()
     sequence_length = min(sale_notification_session.event_sequence_length, MAX_SEQUENCE_LENGTH)
